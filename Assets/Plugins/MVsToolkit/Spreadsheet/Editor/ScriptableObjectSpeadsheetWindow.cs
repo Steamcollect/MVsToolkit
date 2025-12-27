@@ -28,7 +28,7 @@ public class ScriptableObjectSpeadsheetWindow : EditorWindow
     // create new
     string createName = "";
 
-    [MenuItem("Window/ScriptableObject Spreadsheet")]
+    [MenuItem("Window/MVsToolkit/ScriptableObject Spreadsheet")]
     public static void Open()
     {
         GetWindow<ScriptableObjectSpeadsheetWindow>("ScriptableObject Spreadsheet");

@@ -6,9 +6,10 @@ namespace MVsToolkit.SceneBrowser
     public class SceneBrowserWindow : EditorWindow
     {
         int searchHeight = 20;
-        string searchTxt;
+        int buttonsSpacing = 4;
+        int margin = 5;
 
-        GUIStyle iconStyle;
+        string searchTxt;
 
         [MenuItem("Window/MVsToolkit/Scene Browser")]
         public static void ShowWindow()
@@ -18,33 +19,60 @@ namespace MVsToolkit.SceneBrowser
 
         private void OnGUI()
         {
-            if(iconStyle == null)
-            {
-                iconStyle = new GUIStyle(GUI.skin.button)
-                {
-                    padding = new RectOffset(2, 2, 2, 2),
-                    margin = new RectOffset(0, 0, 0, 0),
-                    alignment = TextAnchor.MiddleCenter
-                };
-            }
+            Rect rect = new Rect(0, 0, position.width, position.height);
 
             GUILayout.BeginHorizontal();
 
-            searchTxt = EditorGUILayout.TextField(string.Empty, searchTxt);
+            Rect searchRect = new Rect(
+                rect.x + margin,
+                rect.y + margin + 1,
+                rect.width - (margin + (searchHeight * 1.4f + buttonsSpacing) * 2 + buttonsSpacing),
+                searchHeight
+            );
 
-            if (GUILayout.Button(EditorGUIUtility.IconContent("Refresh"), GUILayout.Width(searchHeight * 1.5f)))
+            GUIStyle searchStyle = GUI.skin.FindStyle("SearchTextField");
+            searchTxt = GUI.TextField(searchRect, searchTxt, searchStyle);
+
+            Rect buttonRect = new Rect(
+                rect.x + rect.width - (margin + (searchHeight * 1.4f) * 2 + buttonsSpacing),
+                rect.y + margin,
+                searchHeight * 1.4f,
+                searchHeight * .9f
+            );
+
+            GUIContent content = new GUIContent(EditorGUIUtility.IconContent("d_Toolbar Plus More"))
+            { tooltip = "Create new scene" };
+
+            if (GUI.Button(buttonRect, content))
+            {
+                SceneBrowserContent.CreateNewScene(searchTxt);
+                SceneBrowserContent.RefreshScenesList();
+            }
+
+            buttonRect = new Rect(
+                rect.x + rect.width - (margin + searchHeight * 1.4f),
+                rect.y + margin,
+                searchHeight * 1.4f,
+                searchHeight * .9f
+            );
+
+            content = new GUIContent(EditorGUIUtility.IconContent("Refresh"))
+            { tooltip = "Refresh scenes list" };
+
+            if (GUI.Button(buttonRect, content))
             {
                 SceneBrowserContent.RefreshScenesList();
             }
+
             GUILayout.EndHorizontal();
 
             float contentY = searchHeight + 12;
             float contentHeight = position.height - contentY;
 
             Rect contentR = new Rect(
-                0,
-                contentY,
-                position.width,
+                rect.x,
+                rect.y + contentY,
+                rect.width,
                 contentHeight
             );
 
