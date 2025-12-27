@@ -29,6 +29,7 @@ namespace MVsToolkit.SceneBrowser
             }
 
             GUILayout.BeginHorizontal();
+
             searchTxt = EditorGUILayout.TextField(string.Empty, searchTxt);
 
             if (GUILayout.Button(EditorGUIUtility.IconContent("Refresh"), GUILayout.Width(searchHeight * 1.5f)))

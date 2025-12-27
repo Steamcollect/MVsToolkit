@@ -3,6 +3,7 @@ using UnityEditor.SceneManagement;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MVsToolkit.SceneBrowser
 {
@@ -123,6 +124,22 @@ namespace MVsToolkit.SceneBrowser
                         EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(sceneData.asset));
                     }
                 }
+        }
+
+        public static void CreateNewScene(string sceneName)
+        {
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                string path = EditorUtility.SaveFilePanelInProject("Create New Scene", sceneName, "unity", "Specify where to save the new scene.");
+
+                if (string.IsNullOrEmpty(path)) return;
+
+                Scene scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+                EditorSceneManager.SaveScene(scene, path);
+                AssetDatabase.Refresh();
+                SaveScenesData();
+                RefreshScenesList();
+            }
         }
 
         public static Vector2 GetWindowSize()
