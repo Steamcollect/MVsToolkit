@@ -17,6 +17,11 @@ namespace MVsToolkit.SceneBrowser
             GetWindow<SceneBrowserWindow>("Scene Browser");
         }
 
+        private void OnEnable()
+        {
+            SceneBrowserContent.RefreshScenesList();
+        }
+
         private void OnGUI()
         {
             Rect rect = new Rect(0, 0, position.width, position.height);
@@ -45,8 +50,12 @@ namespace MVsToolkit.SceneBrowser
 
             if (GUI.Button(buttonRect, content))
             {
-                SceneBrowserContent.CreateNewScene(searchTxt);
-                SceneBrowserContent.RefreshScenesList();
+                string nameCopy = searchTxt;
+                EditorApplication.delayCall += () =>
+                {
+                    SceneBrowserContent.CreateNewScene(nameCopy);
+                    SceneBrowserContent.RefreshScenesList();
+                };
             }
 
             buttonRect = new Rect(

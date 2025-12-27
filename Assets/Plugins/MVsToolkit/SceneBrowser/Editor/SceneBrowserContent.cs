@@ -10,9 +10,10 @@ namespace MVsToolkit.SceneBrowser
     [InitializeOnLoad]
     public static class SceneBrowserContent
     {
-        static List<SceneBrowerData> scenes = new();
-        const string SaveKey = "SceneBrowser_Data";
+        static SceneBrowserDatabase db;
 
+        const string SaveKey = "SceneBrowser_Data";
+        
         static GUIStyle sceneButtonStyle, favoriteButtonStyle;
         
         static int buttonHeight = 18;
@@ -25,7 +26,7 @@ namespace MVsToolkit.SceneBrowser
 
         static SceneBrowserContent()
         {
-            RefreshScenesList();
+            LoadOrCreateDatabase();
         }
 
         #region Drawing
@@ -70,7 +71,7 @@ namespace MVsToolkit.SceneBrowser
             {
                 if (_scenes[i].asset == null)
                 {
-                    scenes.Remove(_scenes[i]);
+                    db.scenes.Remove(_scenes[i]);
                     continue;
                 }
 
@@ -111,8 +112,11 @@ namespace MVsToolkit.SceneBrowser
 
                 if (GUI.Button(favoriteRect, favoriteButtonText, favoriteButtonStyle))
                 {
+                    Undo.RecordObject(db, "Toggle Favorite Scene");
                     sceneData.isFavorite = !sceneData.isFavorite;
-                    scenes = scenes.OrderBy(scenes => !scenes.isFavorite).ToList();
+                    EditorUtility.SetDirty(db);
+
+                    db.scenes = db.scenes.OrderBy(scenes => !scenes.isFavorite).ToList();
                     SaveScenesData();
                 }
             }
@@ -128,18 +132,24 @@ namespace MVsToolkit.SceneBrowser
 
         public static void CreateNewScene(string sceneName)
         {
-            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            EditorApplication.delayCall += () =>
             {
-                string path = EditorUtility.SaveFilePanelInProject("Create New Scene", sceneName, "unity", "Specify where to save the new scene.");
+                if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                {
+                    string path = EditorUtility.SaveFilePanelInProject(
+                        "Create New Scene", sceneName, "unity",
+                        "Specify where to save the new scene."
+                    );
 
-                if (string.IsNullOrEmpty(path)) return;
+                    if (string.IsNullOrEmpty(path)) return;
 
-                Scene scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-                EditorSceneManager.SaveScene(scene, path);
-                AssetDatabase.Refresh();
-                SaveScenesData();
-                RefreshScenesList();
-            }
+                    Scene scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+                    EditorSceneManager.SaveScene(scene, path);
+                    AssetDatabase.Refresh();
+                    SaveScenesData();
+                    RefreshScenesList();
+                }
+            };
         }
 
         public static Vector2 GetWindowSize()
@@ -175,36 +185,51 @@ namespace MVsToolkit.SceneBrowser
             SceneAsset[] allScenes = GetAllScenesInAssetsRoot();
 
             foreach (SceneAsset scene in allScenes) // Add new scenes
-                if (scenes.Find(s => s.asset == scene) == null)
-                    scenes.Add(new SceneBrowerData(scene, false));
+                if (db.scenes.Find(s => s.asset == scene) == null)
+                    db.scenes.Add(new SceneBrowerData(scene, false));
 
-            SceneBrowerData[] scenesArray = scenes.ToArray();
+            SceneBrowerData[] scenesArray = db.scenes.ToArray();
             foreach (SceneBrowerData scene in scenesArray) // Remove deleted scenes
             {
                 if (!allScenes.Contains(scene.asset))
-                    scenes.Remove(scene);
+                    db.scenes.Remove(scene);
             }
 
-            scenes = scenes.OrderBy(scenes => !scenes.isFavorite).ToList();
+            db.scenes = db.scenes.OrderBy(scenes => !scenes.isFavorite).ToList();
+        }
+
+        static void LoadOrCreateDatabase()
+        {
+            db = AssetDatabase.LoadAssetAtPath<SceneBrowserDatabase>("Assets/SceneBrowserDatabase.asset");
+
+            if (db == null)
+            {
+                db = ScriptableObject.CreateInstance<SceneBrowserDatabase>();
+                AssetDatabase.CreateAsset(db, "Assets/SceneBrowserDatabase.asset");
+                AssetDatabase.SaveAssets();
+            }
         }
 
         public static void SaveScenesData()
         {
-            SceneBrowerDataList list = new SceneBrowerDataList(scenes);
+            SceneBrowerDataList list = new SceneBrowerDataList(db.scenes);
             string json = JsonUtility.ToJson(list, true);
             EditorPrefs.SetString(SaveKey, json);
         }
         static void LoadScenesData()
         {
-            scenes.Clear();
-
+            if (db == null) LoadOrCreateDatabase();
+            if (db.scenes == null) db.scenes = new List<SceneBrowerData>();
+            
+            db.scenes.Clear();
+            
             string json = EditorPrefs.GetString(SaveKey, "");
             if (!string.IsNullOrEmpty(json))
             {
                 SceneBrowerDataList list = JsonUtility.FromJson<SceneBrowerDataList>(json);
                 if (list.scenes != null)
                     foreach (SceneBrowerData scene in list.scenes)
-                        scenes.Add(scene);
+                        db.scenes.Add(scene);
             }
         }
 
@@ -233,15 +258,15 @@ namespace MVsToolkit.SceneBrowser
         static SceneBrowerData[] GetScenesWithQuery(string query)
         {
             if (string.IsNullOrEmpty(query))
-                return scenes.ToArray();
+                return db.scenes.ToArray();
             else
-                return scenes.Where(s => s.asset.name.ToLower().Contains(query.ToLower())).ToArray();
+                return db.scenes.Where(s => s.asset.name.ToLower().Contains(query.ToLower())).ToArray();
         }
         #endregion
     }
 
     [System.Serializable]
-    class SceneBrowerData
+    public class SceneBrowerData
     {
         public SceneAsset asset;
         public string assetName;
@@ -263,5 +288,10 @@ namespace MVsToolkit.SceneBrowser
         {
             scenes = new List<SceneBrowerData>(data);
         }
+    }
+
+    public class SceneBrowserDatabase : ScriptableObject 
+    { 
+        public List<SceneBrowerData> scenes = new(); 
     }
 }
