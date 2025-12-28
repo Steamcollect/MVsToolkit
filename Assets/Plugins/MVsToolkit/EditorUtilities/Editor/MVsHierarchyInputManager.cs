@@ -1,14 +1,14 @@
 using UnityEditor;
 using UnityEngine;
+using MVsToolkit.SceneBrowser;
 
-namespace MVsToolkit.BetterInterface
+namespace MVsToolkit
 {
     [InitializeOnLoad]
-    public static class MVsHierarchyInputController
+    public static class MVsHierarchyInputManager
     {
-        static MVsHierarchyInputController()
+        static MVsHierarchyInputManager()
         {
-            // S’enregistre sur chaque redraw de la Hierarchy
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyGUI;
         }
 
@@ -19,7 +19,7 @@ namespace MVsToolkit.BetterInterface
             Event e = Event.current;
             Object obj = EditorUtility.InstanceIDToObject(instanceID);
 
-            if (e.type == EventType.MouseDown && e.button == 0 && selectionRect.Contains(e.mousePosition)) // On left click
+            if (e.type == EventType.MouseDown && e.button == 0 && e.alt && selectionRect.Contains(e.mousePosition)) // On Alt Left click
             {
                 if (obj == null)
                 {

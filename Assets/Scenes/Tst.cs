@@ -1,8 +1,9 @@
 using MVsToolkit.Dev;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Tst : MonoBehaviour
 {
-    [MinMaxRange(16.5f, 122)] public Vector2 MoveSpeed;
-    [MinMaxRange(16.5f, 122)] public Vector2Int DashForceDeLaMortQuiTueCaRace;
+    public Color color;
 }

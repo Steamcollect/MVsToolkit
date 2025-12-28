@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SceneBrowserDatabase
+  m_EditorClassIdentifier: Assembly-CSharp-Editor-firstpass:MVsToolkit.SceneBrowser:SceneBrowserDatabase
+  scenes:
+  - asset: {fileID: 102900000, guid: 399b58beb0665694c9269dc7137368a0, type: 3}
+    assetName: MVsToolkit_Demo
+    isFavorite: 1
+  - asset: {fileID: 102900000, guid: 593c0cc5576a18a419ba2c56eb1e712e, type: 3}
+    assetName: Test 3
+    isFavorite: 0
+  - asset: {fileID: 102900000, guid: 502dd7a5c4fe2b440ae1ed9216205542, type: 3}
+    assetName: Test
+    isFavorite: 0
