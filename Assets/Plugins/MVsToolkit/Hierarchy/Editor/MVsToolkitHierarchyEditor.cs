@@ -11,17 +11,24 @@ namespace MVsToolkit.BetterInterface
         static int iconSize = 16;
         static int iconsSpacing = 0;
 
+        static GUIStyle iconStyle;
+
+        static Texture icon;
+        static GUIContent content;
+
         static MVsToolkitHierarchyEditor()
         {
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyGUI;
         }
 
+        #region Draw
         static void OnHierarchyGUI(int instanceID, Rect rect)
         {
             Object obj = EditorUtility.InstanceIDToObject(instanceID);
 
             if (obj == null) return;
 
+            InitializeStyles();
             Draw(instanceID,
                 obj as GameObject, 
                 Selection.instanceIDs.Contains(instanceID), 
@@ -34,8 +41,7 @@ namespace MVsToolkit.BetterInterface
 
             Component[] comps = go.GetComponents<Component>();
 
-            Rect iconRect;
-            Texture icon;
+            Rect iconRect = new Rect(rect.x - 1, rect.y, iconSize, iconSize);
             Event e = Event.current;
 
             int parentCount = GetParentCount(go);
@@ -75,11 +81,11 @@ namespace MVsToolkit.BetterInterface
             {
                 if(MVsToolkitPreferences.s_DrawFolderIconInHierarchy)
                 {
-                    iconRect = new Rect(rect.x - 1, rect.y, iconSize, iconSize);
                     GUI.color = Color.white;
 
                     if(isPrefab && isMissingPrefab)
-                        DrawErrorIcon(iconRect);
+                        DrawIcon(rect, "console.erroricon", "Missing Prefab");
+
                     else
                     {
                         if(go.transform.childCount == 0) icon = EditorGUIUtility.IconContent("FolderEmpty Icon").image;
@@ -97,12 +103,6 @@ namespace MVsToolkit.BetterInterface
                 }
                 else
                 {
-                    iconRect = new Rect(
-                        rect.x - 1,
-                        rect.y,
-                        iconSize,
-                        iconSize);
-
                     SetGUIColor(go, isSelected);
                     DrawGameObjectIcon(go, isPrefab, isMissingPrefab, iconRect);
                 }
@@ -111,30 +111,19 @@ namespace MVsToolkit.BetterInterface
             {
                 if (MVsToolkitPreferences.s_OverrideGameObjectIcon)
                 {
-                    iconRect = new Rect(
-                            rect.x - 1,
-                            rect.y,
-                            iconSize,
-                            iconSize);
-
                     GUI.color = Color.white;
                     EditorGUI.DrawRect(iconRect, bgColor);
 
                     SetGUIColor(go, isSelected);
 
-                    if(isPrefab && isMissingPrefab)
-                        DrawErrorIcon(iconRect);
+                    if (isPrefab && isMissingPrefab)
+                        DrawIcon(rect, "console.erroricon", "Missing Prefab");
+
                     else
                         DrawComponentIcon(iconRect, comps[1], e, false);
                 }
                 else
                 {
-                    iconRect = new Rect(
-                        rect.x - 1,
-                        rect.y,
-                        iconSize,
-                        iconSize);
-
                     SetGUIColor(go, isSelected);
                     DrawGameObjectIcon(go, isPrefab, isMissingPrefab, iconRect);
                 }
@@ -161,58 +150,28 @@ namespace MVsToolkit.BetterInterface
 
         static void DrawGameObjectIcon(GameObject go, bool isPrefab, bool isMissingPrefab, Rect rect)
         {
-            Texture icon;
-
             if (isPrefab)
             {
                 if(isMissingPrefab)
-                    icon = EditorGUIUtility.IconContent("console.erroricon").image;
+                    DrawIcon(rect, "console.erroricon", "Missing Prefab");
                 else
-                    icon = EditorGUIUtility.IconContent("Prefab Icon").image;
+                    DrawIcon(rect, "Prefab Icon");
             }
             else
-            {
-                icon = EditorGUIUtility.IconContent("GameObject Icon").image;
-            }
-
-            GUI.DrawTexture(rect, icon);
-        }
-
-        static void DrawErrorIcon(Rect rect)
-        {
-            Texture icon = EditorGUIUtility.IconContent("console.erroricon").image;
-            if (icon == null) return;
-            GUIStyle iconStyle = new GUIStyle();
-            iconStyle.padding = new RectOffset(0, 0, 0, 0);
-            iconStyle.margin = new RectOffset(0, 0, 0, 0);
-            iconStyle.border = new RectOffset(0, 0, 0, 0);
-
-            GUI.DrawTexture(rect, icon);
+                DrawIcon(rect, "GameObject Icon");
         }
         static void DrawComponentIcon(Rect rect, Component comp, Event e, bool isInteractible)
         {
-            GUIStyle iconStyle = new GUIStyle();
-            iconStyle.padding = new RectOffset(0, 0, 0, 0);
-            iconStyle.margin = new RectOffset(0, 0, 0, 0);
-            iconStyle.border = new RectOffset(0, 0, 0, 0);
-
-            Texture icon;
-            GUIContent content;
-
             if (comp == null)
             {
-                icon = EditorGUIUtility.IconContent("console.erroricon").image;
-                content = new GUIContent(icon, "Missing Component");
-                GUI.Label(rect, content, iconStyle);
-
+                DrawIcon(rect, "console.erroricon", "Missing Component");
                 return;
             }
 
             icon = EditorGUIUtility.ObjectContent(null, comp.GetType()).image as Texture2D;
             if (icon == null) return;
-
-            content = new GUIContent(icon, comp.GetType().Name + (isInteractible ? "   <color=grey>Alt+LClick</color>" : ""));
-            GUI.Label(rect, content, iconStyle);
+            
+            DrawIcon(rect, icon, isInteractible ? "   <color=grey>Alt+LClick</color>" : "");
 
             if (isInteractible)
             {
@@ -244,16 +203,30 @@ namespace MVsToolkit.BetterInterface
             }
         }
 
+        static void DrawIcon(Rect rect, string textureName, string tooltip = "")
+        {
+            icon = EditorGUIUtility.IconContent(textureName).image;
+            content = new GUIContent(icon, tooltip);
+            GUI.Label(rect, content, iconStyle);
+        }
+        static void DrawIcon(Rect rect, Texture icon, string tooltip = "")
+        {
+            content = new GUIContent(icon, tooltip);
+            GUI.Label(rect, content, iconStyle);
+        }
+        #endregion
+
+        #region Helpers
         static void SetGUIColor(GameObject go, bool isSelected, bool usePrefabColor = false)
         {
             if (usePrefabColor && go.IsPartOfAnyPrefab())
             {
-                GUI.color = MVsToolkitColorUtility.PrefabColor(GetTopParentActiveSelf(go), isSelected, go.IsPartOfMissingPrefab());
+                GUI.color = MVsToolkitColorUtility.PrefabColor(HaveParentActiveSelfFalse(go), isSelected, go.IsPartOfMissingPrefab());
             }
             else
             {
                 if (isSelected) GUI.color = Color.white;
-                else GUI.color = GetTopParentActiveSelf(go) ? Color.white : Color.grey;
+                else GUI.color = HaveParentActiveSelfFalse(go) ? Color.white : Color.grey;
             }
         }
 
@@ -302,7 +275,7 @@ namespace MVsToolkit.BetterInterface
             var status = PrefabUtility.GetPrefabInstanceStatus(root);
             return status != PrefabInstanceStatus.Connected;
         }
-        static bool GetTopParentActiveSelf(GameObject go)
+        static bool HaveParentActiveSelfFalse(GameObject go)
         {
             if (go == null) return false;
 
@@ -316,7 +289,25 @@ namespace MVsToolkit.BetterInterface
                 t = t.parent;
             }
 
-            return t.gameObject.activeSelf;
+            return true;
+        }
+
+        static void InitializeStyles()
+        {
+            if (iconStyle != null) return;
+            iconStyle = new GUIStyle();
+            iconStyle.padding = new RectOffset(0, 0, 0, 0);
+            iconStyle.margin = new RectOffset(0, 0, 0, 0);
+            iconStyle.border = new RectOffset(0, 0, 0, 0);
+        }
+        #endregion
+
+        enum PrefabState
+        {
+            None,
+            Prefab,
+            PrefabVariant,
+            MissingPrefab
         }
     }
 }
