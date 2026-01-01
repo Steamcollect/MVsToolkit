@@ -9,16 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: bd6f342bfd88c434b86af54508542005, type: 3}
   m_Name: SceneBrowserDatabase
-  m_EditorClassIdentifier: Assembly-CSharp-Editor-firstpass:MVsToolkit.SceneBrowser:SceneBrowserDatabase
+  m_EditorClassIdentifier: Assembly-CSharp-Editor-firstpass::MVsToolkit.SceneBrowser.SceneBrowserDatabase
   scenes:
   - asset: {fileID: 102900000, guid: 399b58beb0665694c9269dc7137368a0, type: 3}
     assetName: MVsToolkit_Demo
     isFavorite: 1
   - asset: {fileID: 102900000, guid: 593c0cc5576a18a419ba2c56eb1e712e, type: 3}
     assetName: Test 3
-    isFavorite: 0
+    isFavorite: 1
   - asset: {fileID: 102900000, guid: 502dd7a5c4fe2b440ae1ed9216205542, type: 3}
     assetName: Test
     isFavorite: 0

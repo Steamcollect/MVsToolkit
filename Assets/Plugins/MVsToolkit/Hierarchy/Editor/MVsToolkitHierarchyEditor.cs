@@ -9,12 +9,28 @@ namespace MVsToolkit.BetterInterface
     public static class MVsToolkitHierarchyEditor
     {
         static int iconSize = 16;
+        static float compIconSizeMultiplier = 0.75f;
+        static int iconXOffset = 4;
         static int iconsSpacing = 0;
 
         static GUIStyle iconStyle;
 
         static Texture icon;
         static GUIContent content;
+
+        // --- GameObject infos
+        static GameObject go;
+        static Color bgColor;
+
+        static bool isSelected;
+        static int parentCount;
+
+        static bool isHover;
+        static bool activeSelf;
+        static bool isGameObjectExpand;
+
+        static GameObjectState state;
+        // ---
 
         static MVsToolkitHierarchyEditor()
         {
@@ -24,171 +40,169 @@ namespace MVsToolkit.BetterInterface
         #region Draw
         static void OnHierarchyGUI(int instanceID, Rect rect)
         {
-            Object obj = EditorUtility.InstanceIDToObject(instanceID);
-
+            Object obj = EditorUtility.InstanceIDToObject(instanceID); // Check if the object is a GameObject
             if (obj == null) return;
-
-            InitializeStyles();
-            Draw(instanceID,
-                obj as GameObject, 
-                Selection.instanceIDs.Contains(instanceID), 
-                rect);
-        }
-
-        static void Draw(int instanceID, GameObject go, bool isSelected, Rect rect)
-        {
-            if (go == null) return;
-
-            Component[] comps = go.GetComponents<Component>();
-
-            Rect iconRect = new Rect(rect.x - 1, rect.y, iconSize, iconSize);
+            
+            go = obj as GameObject;
             Event e = Event.current;
 
-            int parentCount = GetParentCount(go);
+            InitializeStyles();
 
-            bool isHover = rect.Contains(e.mousePosition);
-            bool isGameObjectExpand = IsGameObjectExpand(instanceID);
+            // --- Setup GameObject infos
+            isSelected = Selection.instanceIDs.Contains(instanceID);
+            parentCount = GetParentCount(go);
 
-            bool isPrefab = go.IsPartOfAnyPrefab();
-            bool isMissingPrefab = go.IsPartOfMissingPrefab();
+            isHover = rect.Contains(e.mousePosition);
+            activeSelf = GetHierarchyActiveSelf(go);
+            isGameObjectExpand = IsGameObjectExpand(instanceID);
+            // ---
 
-            Color bgColor = MVsToolkitColorUtility.HierarchyBackgroundColor(((int)rect.y / (int)rect.height) % 2 == 1);
+            GUI.color = Color.white;
+
+            DrawBackground(rect);
+            DrawChildLine(rect);
+            DrawSetActiveToggle(rect, e);
+
+            DrawComponentsIcon(rect, go, out Component[] comps, out bool haveMissingComponent);
+
+            state = GetState(haveMissingComponent);
+
+            DrawGameObjectName(rect);
+            DrawGameObjectIcon(rect, comps.Length > 1 ? comps[1] : null);
+        }
+
+        static void DrawBackground(Rect rect)
+        {
+            bgColor = MVsToolkitColorUtility.HierarchyBackgroundColor(((int)rect.y / (int)rect.height) % 2 == 1);
             if (isHover) bgColor = MVsToolkitColorUtility.HierarchyHoverColor;
             if (isSelected) bgColor = MVsToolkitColorUtility.HierarchySelectionColor;
-
             EditorGUI.DrawRect(new Rect(rect.x - 21 - (14 * parentCount), rect.y, rect.width + 22 + (14 * parentCount), rect.height), bgColor);
-            if (MVsToolkitPreferences.s_IsChildLine)
-            {
-                for (int i = 0; i < parentCount; i++)
-                {
-                    EditorGUI.DrawRect(new Rect(rect.x - 22 - (14 * i), rect.y, 1, rect.height), new Color(.3f, .3f, .3f));
-                }
-            }
+        }
 
-            DrawSetActiveToggle(go, rect, e);
-
-            SetGUIColor(go, isSelected, true);
-            EditorGUI.LabelField(new Rect(rect.x + iconSize, rect.y, rect.width + 44, rect.height), go.name);
-
-            if (go.transform.childCount > 0)
-            {
-                GUI.color = Color.white;
-                Rect foldoutRect = new Rect(rect.x - 14f, rect.y, 14f, rect.height);
-                EditorGUI.Foldout(foldoutRect, isGameObjectExpand, GUIContent.none, false);
-            }
-
-            if (comps.Length <= 1)
-            {
-                if(MVsToolkitPreferences.s_DrawFolderIconInHierarchy)
-                {
-                    GUI.color = Color.white;
-
-                    if(isPrefab && isMissingPrefab)
-                        DrawIcon(rect, "console.erroricon", "Missing Prefab");
-
-                    else
-                    {
-                        if(go.transform.childCount == 0) icon = EditorGUIUtility.IconContent("FolderEmpty Icon").image;
-                        else
-                        {
-                            if(isGameObjectExpand) icon = EditorGUIUtility.IconContent("FolderOpened Icon").image;
-                            else icon = EditorGUIUtility.IconContent("Folder Icon").image;
-                        }
-
-                        EditorGUI.DrawRect(iconRect, bgColor);
-
-                        SetGUIColor(go, isSelected, true);
-                        GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
-                    }
-                }
-                else
-                {
-                    SetGUIColor(go, isSelected);
-                    DrawGameObjectIcon(go, isPrefab, isMissingPrefab, iconRect);
-                }
-            }
+        static void DrawGameObjectName(Rect rect)
+        {
+            if (isSelected) GUI.color = Color.white;
             else
             {
-                if (MVsToolkitPreferences.s_OverrideGameObjectIcon)
+                switch(state)
                 {
-                    GUI.color = Color.white;
-                    EditorGUI.DrawRect(iconRect, bgColor);
+                    case GameObjectState.Normal:
+                        GUI.color = activeSelf ? Color.white : Color.gray;
+                        break;
 
-                    SetGUIColor(go, isSelected);
+                    case GameObjectState.ErrorFromMissingPrefab:
+                    case GameObjectState.ErrorFromMissingComponent:
+                        GUI.color = activeSelf ? MVsToolkitPreferences.s_EnableMissingPrefabColor : MVsToolkitPreferences.s_DisableMissingPrefabColor;
+                        break;
 
-                    if (isPrefab && isMissingPrefab)
-                        DrawIcon(rect, "console.erroricon", "Missing Prefab");
-
-                    else
-                        DrawComponentIcon(iconRect, comps[1], e, false);
+                    case GameObjectState.Prefab:
+                    case GameObjectState.PrefabVariant:
+                    case GameObjectState.PrefabChildren:
+                        GUI.color = activeSelf ? MVsToolkitPreferences.s_EnablePrefabColor : MVsToolkitPreferences.s_DisablePrefabColor;
+                        break;
                 }
-                else
-                {
-                    SetGUIColor(go, isSelected);
-                    DrawGameObjectIcon(go, isPrefab, isMissingPrefab, iconRect);
-                }
+            }
 
-                if (MVsToolkitPreferences.s_ShowComponentsIcon)
-                {
-                    SetGUIColor(go, isSelected);
+            EditorGUI.LabelField(new Rect(rect.x + iconSize + iconXOffset + 1, rect.y, rect.width + 44, rect.height), go.name);
+        }
 
-                    for (int i = 1; i < comps.Length; i++)
+        static void DrawGameObjectIcon(Rect rect, Component comp)
+        {
+            GUI.color = !isSelected && !activeSelf ? Color.gray : Color.white;
+            
+            Rect iconRect = new Rect(rect.x - 1, rect.y, iconSize, iconSize);
+
+            switch(state)
+            {
+                case GameObjectState.ErrorFromMissingPrefab:
+                    DrawIcon(iconRect, "console.erroricon", "Missing Prefab");
+                    return;
+
+                case GameObjectState.ErrorFromMissingComponent:
+                    DrawIcon(iconRect, "console.erroricon", "Missing Component");
+                    return;
+
+                case GameObjectState.Normal:
+                case GameObjectState.PrefabChildren:
+                    if (MVsToolkitPreferences.s_DrawFolderIconInHierarchy && comp == null)
                     {
-                        iconRect = new Rect(
-                            rect.x + rect.width - ((comps.Length - i) * iconSize) + ((comps.Length - i) * -iconsSpacing),
-                            rect.y,
-                            iconSize,
-                            iconSize);
-
-                        DrawComponentIcon(iconRect, comps[i], e, true);
+                        if(go.transform.childCount == 0)
+                            DrawIcon(iconRect, "FolderEmpty Icon");
+                        else if (isGameObjectExpand)
+                            DrawIcon(iconRect, "FolderOpened Icon");
+                        else
+                            DrawIcon(iconRect, "Folder Icon");
+                        
+                        return;
                     }
-                }                    
+                    DrawIcon(iconRect, "GameObject Icon");
+                    break;
+
+                case GameObjectState.Prefab:
+                    DrawIcon(iconRect, "Prefab Icon");
+                    break;
+                
+                case GameObjectState.PrefabVariant:
+                    DrawIcon(iconRect, "PrefabVariant Icon");
+                    break;
+            }
+
+            if (MVsToolkitPreferences.s_OverrideGameObjectIcon && comp != null)
+            {
+                icon = EditorGUIUtility.ObjectContent(null, comp.GetType()).image as Texture2D;
+                if (icon == null) return;
+
+                Rect compRect = new Rect(
+                    iconRect.x + iconRect.width - iconRect.width * compIconSizeMultiplier + iconXOffset,
+                    iconRect.y + iconRect.height - iconRect.height * compIconSizeMultiplier,
+                    iconRect.width * compIconSizeMultiplier,
+                    iconRect.height * compIconSizeMultiplier
+                );
+
+                GUI.color = Color.white;
+                EditorGUI.DrawRect(compRect, bgColor);
+                GUI.color = !isSelected && !activeSelf ? Color.gray : Color.white;
+
+                compRect.x += 1;
+                DrawIcon(compRect, icon);
             }
 
             GUI.color = Color.white;
         }
 
-        static void DrawGameObjectIcon(GameObject go, bool isPrefab, bool isMissingPrefab, Rect rect)
+        static void DrawComponentsIcon(Rect rect, GameObject go, out Component[] comps, out bool haveMissingComponent)
         {
-            if (isPrefab)
-            {
-                if(isMissingPrefab)
-                    DrawIcon(rect, "console.erroricon", "Missing Prefab");
-                else
-                    DrawIcon(rect, "Prefab Icon");
-            }
-            else
-                DrawIcon(rect, "GameObject Icon");
-        }
-        static void DrawComponentIcon(Rect rect, Component comp, Event e, bool isInteractible)
-        {
-            if (comp == null)
-            {
-                DrawIcon(rect, "console.erroricon", "Missing Component");
-                return;
-            }
+            comps = go.GetComponents<Component>();
+            haveMissingComponent = false;
 
-            icon = EditorGUIUtility.ObjectContent(null, comp.GetType()).image as Texture2D;
-            if (icon == null) return;
-            
-            DrawIcon(rect, icon, isInteractible ? "   <color=grey>Alt+LClick</color>" : "");
+            GUI.color = !isSelected && !activeSelf ? Color.gray : Color.white;
 
-            if (isInteractible)
+            for (int i = 1; i < comps.Length; i++)
             {
-                if (e.alt && e.type == EventType.MouseDown && e.button == 0)
+                if (comps[i] == null)
                 {
-                    if (rect.Contains(e.mousePosition))
-                    {
-                        SingleComponentWindow.Show(comp);
-                        e.Use();
-                    }
+                    haveMissingComponent = true;
+                    if (MVsToolkitPreferences.s_ShowComponentsIcon) continue;
+                    else return;
+                }
+
+                if (MVsToolkitPreferences.s_ShowComponentsIcon)
+                {
+                    Rect compRect = new Rect(
+                        rect.x + rect.width - ((comps.Length - i) * iconSize) + ((comps.Length - i) * -iconsSpacing),
+                        rect.y,
+                        iconSize,
+                        iconSize);
+
+                    icon = EditorGUIUtility.ObjectContent(null, comps[i].GetType()).image as Texture2D;
+                    DrawIcon(compRect, icon, comps[i].GetType().Name);
                 }
             }
         }
-
-        static void DrawSetActiveToggle(GameObject go, Rect rect, Event e)
+        
+        static void DrawSetActiveToggle(Rect rect, Event e)
         {
-            Rect toggleRect = new Rect(rect.x - 27, rect.y - 1, 18, 18);
+            Rect toggleRect = new Rect(rect.x - 27 - (14 * parentCount), rect.y - 1, 18, 18);
 
             if (rect.Contains(e.mousePosition) || toggleRect.Contains(e.mousePosition))
             {
@@ -199,6 +213,22 @@ namespace MVsToolkit.BetterInterface
                     Undo.RecordObject(go, "Toggle Active State");
                     go.SetActive(newActive);
                     EditorUtility.SetDirty(go);
+                }
+            }
+        }
+        static void DrawChildLine(Rect rect)
+        {
+            if (go.transform.childCount > 0)
+            {
+                Rect foldoutRect = new Rect(rect.x - 14f, rect.y, 14f, rect.height);
+                EditorGUI.Foldout(foldoutRect, isGameObjectExpand, GUIContent.none, false);
+            }
+
+            if (MVsToolkitPreferences.s_IsChildLine)
+            {
+                for (int i = 0; i < parentCount; i++)
+                {
+                    EditorGUI.DrawRect(new Rect(rect.x - 22 - (14 * i), rect.y, 1, rect.height), new Color(.3f, .3f, .3f));
                 }
             }
         }
@@ -217,19 +247,6 @@ namespace MVsToolkit.BetterInterface
         #endregion
 
         #region Helpers
-        static void SetGUIColor(GameObject go, bool isSelected, bool usePrefabColor = false)
-        {
-            if (usePrefabColor && go.IsPartOfAnyPrefab())
-            {
-                GUI.color = MVsToolkitColorUtility.PrefabColor(HaveParentActiveSelfFalse(go), isSelected, go.IsPartOfMissingPrefab());
-            }
-            else
-            {
-                if (isSelected) GUI.color = Color.white;
-                else GUI.color = HaveParentActiveSelfFalse(go) ? Color.white : Color.grey;
-            }
-        }
-
         static bool IsGameObjectExpand(int instanceID)
         {
             System.Type sceneHierarchyWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.SceneHierarchyWindow");
@@ -263,11 +280,7 @@ namespace MVsToolkit.BetterInterface
             return count;
         }
 
-        static bool IsPartOfAnyPrefab(this GameObject obj)
-        {
-            return PrefabUtility.IsPartOfAnyPrefab(obj);
-        }
-        static bool IsPartOfMissingPrefab(this GameObject go)
+        static bool IsPartOfMissingPrefab(GameObject go)
         {
             var root = PrefabUtility.GetNearestPrefabInstanceRoot(go);
             if (root == null) return false;
@@ -275,13 +288,13 @@ namespace MVsToolkit.BetterInterface
             var status = PrefabUtility.GetPrefabInstanceStatus(root);
             return status != PrefabInstanceStatus.Connected;
         }
-        static bool HaveParentActiveSelfFalse(GameObject go)
+        static bool GetHierarchyActiveSelf(GameObject go)
         {
             if (go == null) return false;
 
             Transform t = go.transform;
 
-            while (t.parent != null)
+            while (t != null)
             {
                 if (!t.gameObject.activeSelf)
                     return false;
@@ -290,6 +303,29 @@ namespace MVsToolkit.BetterInterface
             }
 
             return true;
+        }
+
+        static GameObjectState GetState(bool haveMissingComponent)
+        {
+            bool isRootOfPrefab = PrefabUtility.GetNearestPrefabInstanceRoot(go) == go;
+            bool isPartOfPrefab = PrefabUtility.IsPartOfAnyPrefab(go);
+
+            if (IsPartOfMissingPrefab(go))
+                return GameObjectState.ErrorFromMissingPrefab;
+
+            if (haveMissingComponent)
+                return GameObjectState.ErrorFromMissingComponent;
+
+            if(isPartOfPrefab && !isRootOfPrefab)
+                return GameObjectState.PrefabChildren;
+
+            if (PrefabUtility.IsPartOfVariantPrefab(go))
+                return GameObjectState.PrefabVariant;
+
+            if (isPartOfPrefab && isRootOfPrefab)
+                return GameObjectState.Prefab;
+
+            return GameObjectState.Normal;
         }
 
         static void InitializeStyles()
@@ -302,12 +338,15 @@ namespace MVsToolkit.BetterInterface
         }
         #endregion
 
-        enum PrefabState
+        enum GameObjectState
         {
-            None,
+            Normal,
             Prefab,
             PrefabVariant,
-            MissingPrefab
+            PrefabChildren,
+
+            ErrorFromMissingPrefab,
+            ErrorFromMissingComponent,
         }
     }
 }
