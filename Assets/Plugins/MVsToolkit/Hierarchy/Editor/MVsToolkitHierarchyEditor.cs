@@ -34,11 +34,11 @@ namespace MVsToolkit.BetterInterface
 
         static MVsToolkitHierarchyEditor()
         {
-            EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyGUI;
+            EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyItemGUI;
         }
 
         #region Draw
-        static void OnHierarchyGUI(int instanceID, Rect rect)
+        static void OnHierarchyItemGUI(int instanceID, Rect rect)
         {
             Object obj = EditorUtility.InstanceIDToObject(instanceID); // Check if the object is a GameObject
             if (obj == null) return;
