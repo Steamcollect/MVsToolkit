@@ -76,12 +76,12 @@ namespace MVsToolkit.BetterInterface
 
         // PREFAB
         
-        const string k_EnablePrefabColorKey = "k_EnablePrefabColorKey";
-        public static Color s_EnablePrefabColor
+        const string k_PrefabColorKey = "k_EnablePrefabColorKey";
+        public static Color s_PrefabColor
         {
             get
             {
-                string colorString = EditorPrefs.GetString(k_EnablePrefabColorKey, "8CC7FF"); // valeur par défaut
+                string colorString = EditorPrefs.GetString(k_PrefabColorKey, "8CC7FF"); // valeur par défaut
                 if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
                     return c;
 
@@ -90,78 +90,18 @@ namespace MVsToolkit.BetterInterface
             set
             {
                 string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_EnablePrefabColorKey, colorString);
-            }
-        }
-
-        //-----------------------------
-
-        const string k_DisablePrefabColorKey = "k_DisablePrefabColorKey";
-        public static Color s_DisablePrefabColor
-        {
-            get
-            {
-                string colorString = EditorPrefs.GetString(k_DisablePrefabColorKey, "6B90AE"); // valeur par défaut
-                if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
-                    return c;
-
-                return Color.white;
-            }
-            set
-            {
-                string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_DisablePrefabColorKey, colorString);
-            }
-        }
-
-        //-----------------------------
-
-        const string k_EnableSelectedPrefabColorKey = "k_EnableSelectedPrefabColorKey";
-        public static Color s_EnableSelectedPrefabColor
-        {
-            get
-            {
-                string colorString = EditorPrefs.GetString(k_EnableSelectedPrefabColorKey, "FFFFFF"); // valeur par défaut
-                if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
-                    return c;
-
-                return Color.white;
-            }
-            set
-            {
-                string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_EnableSelectedPrefabColorKey, colorString);
-            }
-        }
-
-        //-----------------------------
-
-        const string k_DisableSelectedPrefabColorKey = "k_DisableSelectedPrefabColorKey";
-        public static Color s_DisableSelectedPrefabColor
-        {
-            get
-            {
-                string colorString = EditorPrefs.GetString(k_DisableSelectedPrefabColorKey, "99B1DC"); // valeur par défaut
-                if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
-                    return c;
-
-                return Color.white;
-            }
-            set
-            {
-                string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_DisableSelectedPrefabColorKey, colorString);
+                EditorPrefs.SetString(k_PrefabColorKey, colorString);
             }
         }
 
         // MISSING PREFAB
 
-        const string k_EnableMissingPrefabColorKey = "k_EnableMissingPrefabColorKey";
-        public static Color s_EnableMissingPrefabColor
+        const string k_MissingPrefabColorKey = "k_EnableMissingPrefabColorKey";
+        public static Color s_MissingPrefabColor
         {
             get
             {
-                string colorString = EditorPrefs.GetString(k_EnableMissingPrefabColorKey, "FF6767"); // valeur par défaut
+                string colorString = EditorPrefs.GetString(k_MissingPrefabColorKey, "FF6767"); // valeur par défaut
                 if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
                     return c;
 
@@ -170,67 +110,7 @@ namespace MVsToolkit.BetterInterface
             set
             {
                 string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_EnableMissingPrefabColorKey, colorString);
-            }
-        }
-
-        //-----------------------------
-
-        const string k_DisableMissingPrefabColorKey = "k_DisableMissingPrefabColorKey";
-        public static Color s_DisableMissingPrefabColor
-        {
-            get
-            {
-                string colorString = EditorPrefs.GetString(k_DisableMissingPrefabColorKey, "B64B4B"); // valeur par défaut
-                if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
-                    return c;
-
-                return Color.white;
-            }
-            set
-            {
-                string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_DisableMissingPrefabColorKey, colorString);
-            }
-        }
-
-        //-----------------------------
-
-        const string k_EnableSelectedMissingPrefabColorKey = "k_EnableSelectedMissingPrefabColorKey";
-        public static Color s_EnableSelectedMissingPrefabColor
-        {
-            get
-            {
-                string colorString = EditorPrefs.GetString(k_EnableSelectedMissingPrefabColorKey, "FFFFFF"); // valeur par défaut
-                if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
-                    return c;
-
-                return Color.white;
-            }
-            set
-            {
-                string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_EnableSelectedMissingPrefabColorKey, colorString);
-            }
-        }
-
-        //-----------------------------
-
-        const string k_DisableSelectedMissingPrefabColorKey = "k_DisableSelectedMissingPrefabColorKey";
-        public static Color s_DisableSelectedMissingPrefabColor
-        {
-            get
-            {
-                string colorString = EditorPrefs.GetString(k_DisableSelectedMissingPrefabColorKey, "E4AAAA"); // valeur par défaut
-                if (ColorUtility.TryParseHtmlString("#" + colorString, out Color c))
-                    return c;
-
-                return Color.white;
-            }
-            set
-            {
-                string colorString = ColorUtility.ToHtmlStringRGBA(value);
-                EditorPrefs.SetString(k_DisableSelectedMissingPrefabColorKey, colorString);
+                EditorPrefs.SetString(k_MissingPrefabColorKey, colorString);
             }
         }
         #endregion
@@ -265,16 +145,8 @@ namespace MVsToolkit.BetterInterface
                     // Colors
                     s_ZebraSecondColor = EditorGUILayout.ColorField("Zebra Second Color", s_ZebraSecondColor);
                     EditorGUILayout.Space(10);
-                    s_EnablePrefabColor = EditorGUILayout.ColorField("Enable Prefab Color", s_EnablePrefabColor);
-                    s_DisablePrefabColor = EditorGUILayout.ColorField("Disable Prefab Color", s_DisablePrefabColor);
-                    s_EnableSelectedPrefabColor = EditorGUILayout.ColorField("Enable Selected Prefab Color", s_EnableSelectedPrefabColor);
-                    s_DisableSelectedPrefabColor = EditorGUILayout.ColorField("Disable Selected Prefab Color", s_DisableSelectedPrefabColor);
-
-                    EditorGUILayout.Space(10);
-                    s_EnableMissingPrefabColor = EditorGUILayout.ColorField("Enable Missing Prefab Color", s_EnableMissingPrefabColor);
-                    s_DisableMissingPrefabColor = EditorGUILayout.ColorField("Disable Missing Prefab Color", s_DisableMissingPrefabColor);
-                    s_EnableSelectedMissingPrefabColor = EditorGUILayout.ColorField("Enable Missing Selected Prefab Color", s_EnableSelectedMissingPrefabColor);
-                    s_DisableSelectedMissingPrefabColor = EditorGUILayout.ColorField("Disable Missing Selected Prefab Color", s_DisableSelectedMissingPrefabColor);
+                    s_PrefabColor = EditorGUILayout.ColorField("Enable Prefab Color", s_PrefabColor);
+                    s_MissingPrefabColor = EditorGUILayout.ColorField("Enable Missing Prefab Color", s_MissingPrefabColor);
 
                     // Reset values button
                     EditorGUILayout.Space(20);
@@ -297,15 +169,9 @@ namespace MVsToolkit.BetterInterface
 
                             // Reset colors
                             s_ZebraSecondColor = ColorUtility.TryParseHtmlString("#353535", out var zc) ? zc : Color.white;
-                            s_EnablePrefabColor = ColorUtility.TryParseHtmlString("#8CC7FF", out var epc) ? epc : Color.white;
-                            s_DisablePrefabColor = ColorUtility.TryParseHtmlString("#6B90AE", out var dpc) ? dpc : Color.white;
-                            s_EnableSelectedPrefabColor = Color.white;
-                            s_DisableSelectedPrefabColor = ColorUtility.TryParseHtmlString("#99B1DC", out var dsc) ? dsc : Color.white;
 
-                            s_EnableMissingPrefabColor = ColorUtility.TryParseHtmlString("#FF6767", out var emc) ? emc : Color.white;
-                            s_DisableMissingPrefabColor = ColorUtility.TryParseHtmlString("#B64B4B", out var dmc) ? dmc : Color.white;
-                            s_EnableSelectedMissingPrefabColor = Color.white;
-                            s_DisableSelectedMissingPrefabColor = ColorUtility.TryParseHtmlString("#E4AAAA", out var dsmc) ? dsmc : Color.white;
+                            s_PrefabColor = ColorUtility.TryParseHtmlString("#8CC7FF", out var epc) ? epc : Color.white;
+                            s_MissingPrefabColor = ColorUtility.TryParseHtmlString("#FF6767", out var emc) ? emc : Color.white;
 
                             Debug.Log("MV's Toolkit preferences reset to default values.");
                         }

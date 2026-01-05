@@ -37,43 +37,5 @@ namespace MVsToolkit.BetterInterface
                     return new Color(0.24f, 0.49f, 0.90f);
             }
         }
-
-        public static Color PrefabColor(bool isActive, bool isSelected, bool isMissingPrefab)
-        {
-            if (!isMissingPrefab)
-            {
-                if (isActive)
-                {
-                    if (isSelected)
-                        return MVsToolkitPreferences.s_EnableSelectedPrefabColor;
-                    else
-                        return MVsToolkitPreferences.s_EnablePrefabColor;
-                }
-                else
-                {
-                    if (isSelected)
-                        return MVsToolkitPreferences.s_DisableSelectedPrefabColor;
-                    else
-                        return MVsToolkitPreferences.s_DisablePrefabColor;
-                }
-            }
-            else
-            {
-                if (isActive)
-                {
-                    if (isSelected)
-                        return MVsToolkitPreferences.s_EnableSelectedMissingPrefabColor;
-                    else
-                        return MVsToolkitPreferences.s_EnableMissingPrefabColor;
-                }
-                else
-                {
-                    if (isSelected)
-                        return MVsToolkitPreferences.s_DisableSelectedMissingPrefabColor;
-                    else
-                        return MVsToolkitPreferences.s_DisableMissingPrefabColor;
-                }
-            }
-        }
     }
 }

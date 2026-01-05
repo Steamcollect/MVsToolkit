@@ -69,6 +69,8 @@ namespace MVsToolkit.BetterInterface
 
             DrawGameObjectName(rect);
             DrawGameObjectIcon(rect, comps.Length > 1 ? comps[1] : null);
+            
+            GUI.color = Color.white;
         }
 
         static void DrawBackground(Rect rect)
@@ -87,18 +89,18 @@ namespace MVsToolkit.BetterInterface
                 switch(state)
                 {
                     case GameObjectState.Normal:
-                        GUI.color = activeSelf ? Color.white : Color.gray;
+                        GUI.color = activeSelf ? Color.white : Color.gray6;
                         break;
 
                     case GameObjectState.ErrorFromMissingPrefab:
                     case GameObjectState.ErrorFromMissingComponent:
-                        GUI.color = activeSelf ? MVsToolkitPreferences.s_EnableMissingPrefabColor : MVsToolkitPreferences.s_DisableMissingPrefabColor;
+                        GUI.color = MVsToolkitPreferences.s_MissingPrefabColor * (activeSelf ? Color.white : Color.gray7);
                         break;
 
                     case GameObjectState.Prefab:
                     case GameObjectState.PrefabVariant:
                     case GameObjectState.PrefabChildren:
-                        GUI.color = activeSelf ? MVsToolkitPreferences.s_EnablePrefabColor : MVsToolkitPreferences.s_DisablePrefabColor;
+                        GUI.color = MVsToolkitPreferences.s_PrefabColor * (activeSelf ? Color.white : Color.gray7);
                         break;
                 }
             }
@@ -179,21 +181,25 @@ namespace MVsToolkit.BetterInterface
 
             for (int i = 1; i < comps.Length; i++)
             {
+                Rect compRect = new Rect(
+                    rect.x + rect.width - ((comps.Length - i) * iconSize) + ((comps.Length - i) * -iconsSpacing),
+                    rect.y,
+                    iconSize,
+                    iconSize);
+
                 if (comps[i] == null)
                 {
                     haveMissingComponent = true;
-                    if (MVsToolkitPreferences.s_ShowComponentsIcon) continue;
+                    if (MVsToolkitPreferences.s_ShowComponentsIcon)
+                    {
+                        DrawIcon(compRect, "console.erroricon", "Missing Component");
+                        continue;
+                    }
                     else return;
                 }
 
                 if (MVsToolkitPreferences.s_ShowComponentsIcon)
                 {
-                    Rect compRect = new Rect(
-                        rect.x + rect.width - ((comps.Length - i) * iconSize) + ((comps.Length - i) * -iconsSpacing),
-                        rect.y,
-                        iconSize,
-                        iconSize);
-
                     icon = EditorGUIUtility.ObjectContent(null, comps[i].GetType()).image as Texture2D;
                     DrawIcon(compRect, icon, comps[i].GetType().Name);
                 }
