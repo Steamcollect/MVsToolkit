@@ -31,7 +31,7 @@ namespace MVsToolkit.BatchRename
         private static string s_PathLastUsedPreset;
         private static readonly string s_BatchRenamerTitle = "Batch Renamer";
         private static readonly string s_PropertyPresetName = "Config";
-        private const int k_PriorityMenuItem = 0;
+        private const int k_PriorityMenuItem = 100;
 
         #endregion
 
@@ -452,7 +452,6 @@ namespace MVsToolkit.BatchRename
                 EditorUtility.DisplayDialog("No targets", "Please select objects to rename.", "OK");
                 return;
             }
-
 
             if (m_Config == null)
             {

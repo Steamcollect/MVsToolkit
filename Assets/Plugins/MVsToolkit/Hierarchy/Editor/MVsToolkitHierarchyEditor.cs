@@ -32,6 +32,9 @@ namespace MVsToolkit.BetterInterface
         static GameObjectState state;
         // ---
 
+        static Color gray6 = new Color(.6f, .6f, .6f, 1);
+        static Color gray7 = new Color(.7f, .7f, .7f, 1);
+
         static MVsToolkitHierarchyEditor()
         {
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyGUI;
@@ -89,18 +92,18 @@ namespace MVsToolkit.BetterInterface
                 switch(state)
                 {
                     case GameObjectState.Normal:
-                        GUI.color = activeSelf ? Color.white : Color.gray6;
+                        GUI.color = activeSelf ? Color.white : gray6;
                         break;
 
                     case GameObjectState.ErrorFromMissingPrefab:
                     case GameObjectState.ErrorFromMissingComponent:
-                        GUI.color = MVsToolkitPreferences.s_MissingPrefabColor * (activeSelf ? Color.white : Color.gray7);
+                        GUI.color = MVsToolkitPreferences.s_MissingPrefabColor * (activeSelf ? Color.white : gray7);
                         break;
 
                     case GameObjectState.Prefab:
                     case GameObjectState.PrefabVariant:
                     case GameObjectState.PrefabChildren:
-                        GUI.color = MVsToolkitPreferences.s_PrefabColor * (activeSelf ? Color.white : Color.gray7);
+                        GUI.color = MVsToolkitPreferences.s_PrefabColor * (activeSelf ? Color.white : gray7);
                         break;
                 }
             }

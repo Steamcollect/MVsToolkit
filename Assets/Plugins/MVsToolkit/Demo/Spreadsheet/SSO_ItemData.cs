@@ -6,7 +6,7 @@ namespace MVsToolkit.Demo.Spreadsheet
     public class SSO_ItemData : ScriptableObject
     {
         public string itemName;
-        [TextArea] public string itemDescription;
+        public string itemDescription;
 
         public Sprite visual;
         public GameObject prefab;
