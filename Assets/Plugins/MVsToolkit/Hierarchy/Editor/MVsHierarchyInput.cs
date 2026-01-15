@@ -5,9 +5,9 @@ using MVsToolkit.SceneBrowser;
 namespace MVsToolkit
 {
     [InitializeOnLoad]
-    public static class MVsHierarchyInputManager
+    public static class MVsHierarchyInput
     {
-        static MVsHierarchyInputManager()
+        static MVsHierarchyInput()
         {
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyGUI;
         }
