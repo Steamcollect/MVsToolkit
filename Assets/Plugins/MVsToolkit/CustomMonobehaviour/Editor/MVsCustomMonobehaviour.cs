@@ -12,13 +12,8 @@ namespace MVsToolkit.Dev
         public List<MVsInspectorPropertyGroup> propertyGroups = new List<MVsInspectorPropertyGroup>();
         public List<MVsHandleData> handles = new List<MVsHandleData>();
 
-        private readonly Dictionary<Color, Texture2D> _colorTextureCache = new();
-        private readonly Color[] _tabPalette = new Color[0];
-
-        // Cached help box style with zero top margin
         private GUIStyle _helpBoxNoTopMargin;
 
-        // Cache for foldout expanded/collapsed states per FoldoutGroup instance
         private readonly Dictionary<MVsFoldoutGroup, bool> _foldoutStates = new();
 
         private void OnEnable()
@@ -29,7 +24,6 @@ namespace MVsToolkit.Dev
             InitializeData();
             ScanProperties(serializedObject, target);
 
-            // Load saved tab and foldout states for this target
             LoadPersistentStates();
         }
 

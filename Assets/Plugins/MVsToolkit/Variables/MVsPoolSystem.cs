@@ -1,8 +1,7 @@
-using MVsToolkit.Dev;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MVsToolkit.Dev
+namespace MVsToolkit.Pool
 {
     [System.Serializable]
     /// <summary>
@@ -74,7 +73,7 @@ namespace MVsToolkit.Dev
         /// </summary>
         /// <param name="t">Retrieved instance.</param>
         /// <param name="parent">Optional parent for the retrieved instance, otherwise uses <see cref="PoolObject{T}.parent"/>.</param>
-        public bool Get(out T t, Transform parent = null)
+        public bool TryGet(out T t, Transform parent = null)
         {
             if (queue == null) Init();
 

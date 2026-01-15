@@ -30,7 +30,7 @@ namespace MVsToolkit.Spreadsheet
         // create new
         string createName = "";
 
-        [MenuItem("Window/MVsToolkit/ScriptableObject Spreadsheet")]
+        [MenuItem("Tools/MVsToolkit/SO Spreadsheet")]
         public static void Open()
         {
             GetWindow<ScriptableObjectSpeadsheetWindow>("ScriptableObject Spreadsheet");
@@ -51,7 +51,7 @@ namespace MVsToolkit.Spreadsheet
             win.AutoDetectTypeAndScan();
         }
 
-        [MenuItem("Assets/Open SO Spreadsheet Here", true)]
+        [MenuItem("Assets/MVsToolkit/SO Spreadsheet", true)]
         public static bool ValidateOpenHere()
         {
             var obj = Selection.activeObject;

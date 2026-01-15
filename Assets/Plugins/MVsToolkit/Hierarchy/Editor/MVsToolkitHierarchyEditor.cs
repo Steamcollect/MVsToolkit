@@ -1,9 +1,10 @@
 using System.Linq;
 using System.Reflection;
+using MVsToolkit.Preferences;
 using UnityEditor;
 using UnityEngine;
 
-namespace MVsToolkit.BetterInterface
+namespace MVsToolkit.Hierarchy
 {
     [InitializeOnLoad]
     public static class MVsToolkitHierarchyEditor
@@ -78,9 +79,9 @@ namespace MVsToolkit.BetterInterface
 
         static void DrawBackground(Rect rect)
         {
-            bgColor = MVsToolkitColorUtility.HierarchyBackgroundColor(((int)rect.y / (int)rect.height) % 2 == 1);
-            if (isHover) bgColor = MVsToolkitColorUtility.HierarchyHoverColor;
-            if (isSelected) bgColor = MVsToolkitColorUtility.HierarchySelectionColor;
+            bgColor = HierarchyBackgroundColor(((int)rect.y / (int)rect.height) % 2 == 1);
+            if (isHover) bgColor = HierarchyHoverColor;
+            if (isSelected) bgColor = HierarchySelectionColor;
             EditorGUI.DrawRect(new Rect(rect.x - 21 - (14 * parentCount), rect.y, rect.width + 22 + (14 * parentCount), rect.height), bgColor);
         }
 
@@ -97,13 +98,13 @@ namespace MVsToolkit.BetterInterface
 
                     case GameObjectState.ErrorFromMissingPrefab:
                     case GameObjectState.ErrorFromMissingComponent:
-                        GUI.color = MVsToolkitPreferences.s_MissingPrefabColor * (activeSelf ? Color.white : gray7);
+                        GUI.color = StrToColor(MVsToolkitPreferences.Values.MissingPrefabColor) * (activeSelf ? Color.white : gray7);
                         break;
 
                     case GameObjectState.Prefab:
                     case GameObjectState.PrefabVariant:
                     case GameObjectState.PrefabChildren:
-                        GUI.color = MVsToolkitPreferences.s_PrefabColor * (activeSelf ? Color.white : gray7);
+                        GUI.color = StrToColor(MVsToolkitPreferences.Values.PrefabColor) * (activeSelf ? Color.white : gray7);
                         break;
                 }
             }
@@ -129,7 +130,7 @@ namespace MVsToolkit.BetterInterface
 
                 case GameObjectState.Normal:
                 case GameObjectState.PrefabChildren:
-                    if (MVsToolkitPreferences.s_DrawFolderIconInHierarchy && comp == null)
+                    if (MVsToolkitPreferences.Values.DrawFolderIcon && comp == null)
                     {
                         if(go.transform.childCount == 0)
                             DrawIcon(iconRect, "FolderEmpty Icon");
@@ -152,7 +153,7 @@ namespace MVsToolkit.BetterInterface
                     break;
             }
 
-            if (MVsToolkitPreferences.s_OverrideGameObjectIcon && comp != null)
+            if (MVsToolkitPreferences.Values.DrawFirstComponentIcon && comp != null)
             {
                 icon = EditorGUIUtility.ObjectContent(null, comp.GetType()).image as Texture2D;
                 if (icon == null) return;
@@ -193,7 +194,7 @@ namespace MVsToolkit.BetterInterface
                 if (comps[i] == null)
                 {
                     haveMissingComponent = true;
-                    if (MVsToolkitPreferences.s_ShowComponentsIcon)
+                    if (MVsToolkitPreferences.Values.DrawComponentsIcon)
                     {
                         DrawIcon(compRect, "console.erroricon", "Missing Component");
                         continue;
@@ -201,7 +202,7 @@ namespace MVsToolkit.BetterInterface
                     else return;
                 }
 
-                if (MVsToolkitPreferences.s_ShowComponentsIcon)
+                if (MVsToolkitPreferences.Values.DrawComponentsIcon)
                 {
                     icon = EditorGUIUtility.ObjectContent(null, comps[i].GetType()).image as Texture2D;
                     DrawIcon(compRect, icon, comps[i].GetType().Name);
@@ -233,7 +234,7 @@ namespace MVsToolkit.BetterInterface
                 EditorGUI.Foldout(foldoutRect, isGameObjectExpand, GUIContent.none, false);
             }
 
-            if (MVsToolkitPreferences.s_IsChildLine)
+            if (MVsToolkitPreferences.Values.DrawChildLines)
             {
                 for (int i = 0; i < parentCount; i++)
                 {
@@ -256,6 +257,11 @@ namespace MVsToolkit.BetterInterface
         #endregion
 
         #region Helpers
+        static Color StrToColor(string str)
+        {
+            if (ColorUtility.TryParseHtmlString(str, out Color color)) return color;
+            return Color.white;
+        }
         static bool IsGameObjectExpand(int instanceID)
         {
             System.Type sceneHierarchyWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.SceneHierarchyWindow");
@@ -344,6 +350,41 @@ namespace MVsToolkit.BetterInterface
             iconStyle.padding = new RectOffset(0, 0, 0, 0);
             iconStyle.margin = new RectOffset(0, 0, 0, 0);
             iconStyle.border = new RectOffset(0, 0, 0, 0);
+        }
+
+        public static Color HierarchyBackgroundColor(bool isOdd = false)
+        {
+            Color color = Color.white;
+            if (ColorUtility.TryParseHtmlString(MVsToolkitPreferences.Values.ZebraModColor, out Color c)) color = c;
+
+            if (EditorGUIUtility.isProSkin)
+                return (MVsToolkitPreferences.Values.DrawZebraMod && isOdd) ?
+                    color : new Color(0.219f, 0.219f, 0.219f);
+            else
+                return (MVsToolkitPreferences.Values.DrawZebraMod && isOdd) ?
+                     new Color(0.92f, 0.92f, 0.92f) : new Color(0.76f, 0.76f, 0.76f);
+        }
+
+        public static Color HierarchyHoverColor
+        {
+            get
+            {
+                if (EditorGUIUtility.isProSkin)
+                    return new Color(0.2666667f, 0.2666667f, 0.2666667f);
+                else
+                    return new Color(0.8f, 0.8f, 0.8f);
+            }
+        }
+
+        public static Color HierarchySelectionColor
+        {
+            get
+            {
+                if (EditorGUIUtility.isProSkin)
+                    return new Color(0.172549f, 0.3647059f, 0.5294118f);
+                else
+                    return new Color(0.24f, 0.49f, 0.90f);
+            }
         }
         #endregion
 
