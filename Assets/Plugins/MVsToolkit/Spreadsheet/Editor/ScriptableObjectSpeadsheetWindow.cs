@@ -37,7 +37,7 @@ namespace MVsToolkit.Spreadsheet
         }
 
         // Context menu: right click a folder in Project and open window with that folder
-        [MenuItem("Assets/Open SO Spreadsheet Here", false, 2000)]
+        [MenuItem("Assets/MVsTookit/SO Spreadsheet", false)]
         public static void OpenHere()
         {
             var obj = Selection.activeObject;

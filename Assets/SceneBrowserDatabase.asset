@@ -16,9 +16,6 @@ MonoBehaviour:
   - asset: {fileID: 102900000, guid: 399b58beb0665694c9269dc7137368a0, type: 3}
     assetName: MVsToolkit_Demo
     isFavorite: 1
-  - asset: {fileID: 102900000, guid: 593c0cc5576a18a419ba2c56eb1e712e, type: 3}
-    assetName: Test 3
-    isFavorite: 1
-  - asset: {fileID: 102900000, guid: 502dd7a5c4fe2b440ae1ed9216205542, type: 3}
-    assetName: Test
+  - asset: {fileID: 102900000, guid: b6c5dd512bff1d14d93eb38350bd0895, type: 3}
+    assetName: Game
     isFavorite: 0
