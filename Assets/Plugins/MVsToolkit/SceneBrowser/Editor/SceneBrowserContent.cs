@@ -105,10 +105,7 @@ namespace MVsToolkit.SceneBrowser
                 Rect favoriteRect = new Rect(r.x + r.width - r.height * 2, r.y, r.height * 2, r.height);
 
                 bool favoriteContainMouse = favoriteRect.Contains(e.mousePosition);
-                string favoriteButtonText = "☆";
-
-                if (sceneData.isFavorite || (!sceneData.isFavorite && favoriteContainMouse)) favoriteButtonText = "★";
-                if (!sceneData.isFavorite || (sceneData.isFavorite && favoriteContainMouse)) favoriteButtonText = "☆";
+                string favoriteButtonText = sceneData.isFavorite ? "★" : "☆";
 
                 if (GUI.Button(favoriteRect, favoriteButtonText, favoriteButtonStyle))
                 {
@@ -118,16 +115,29 @@ namespace MVsToolkit.SceneBrowser
 
                     db.scenes = db.scenes.OrderBy(scenes => !scenes.isFavorite).ToList();
                     SaveScenesData();
+
+                    e.Use();
                 }
             }
             
-            if (GUI.Button(r, sceneData.asset == null ? sceneData.assetName : sceneData.asset.name, sceneButtonStyle))
+            if (e.type == EventType.MouseUp && e.button == 1 && r.Contains(e.mousePosition) && sceneData.asset != null)
+            {
+                GenericMenu menu = new GenericMenu(); 
+                menu.AddItem(new GUIContent("Ping Asset"), false, () =>
+                    {EditorGUIUtility.PingObject(sceneData.asset);});
+
+                menu.ShowAsContext();
+                e.Use();
+            }
+            else if (GUI.Button(r, sceneData.asset == null ? sceneData.assetName : sceneData.asset.name, sceneButtonStyle))
+            {
+                if (sceneData.asset != null && EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 {
-                    if (sceneData.asset != null && EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                    {
-                        EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(sceneData.asset));
-                    }
+                    EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(sceneData.asset));
                 }
+
+                e.Use();
+            }
         }
 
         public static void CreateNewScene(string sceneName)
