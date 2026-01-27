@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
 using MVsToolkit.Utilities;
 using UnityEditor;
@@ -367,25 +367,32 @@ namespace MVsToolkit.Dev
             string foldKey = GetPrefsPrefix() + "_soFoldout_" + property.propertyPath;
             bool expanded = EditorPrefs.GetBool(foldKey, false);
 
-            // --- HelpBox with zero margins ---
+            // HelpBox with zero margins
             GUIStyle box = GetNoMarginHelpBoxStyle();
+            EditorGUILayout.BeginVertical(box);
 
-            EditorGUILayout.BeginVertical(box); // no margin, no padding
-
-            // --- HEADER (no foldout arrow, looks like a normal field) ---
+            // --- HEADER RECT ---
             Rect headerRect = EditorGUILayout.GetControlRect(false);
 
+            // If expanded → draw a slightly lighter background
+            if (expanded)
+            {
+                Color bg = EditorGUIUtility.isProSkin
+                    ? new Color(1f, 1f, 1f, 0.06f)   // subtle light overlay in dark mode
+                    : new Color(0f, 0f, 0f, 0.06f);  // subtle dark overlay in light mode
+
+                EditorGUI.DrawRect(headerRect, bg);
+            }
+
+            // Label + ObjectField
             float labelWidth = EditorGUIUtility.labelWidth;
             Rect labelRect = new Rect(headerRect.x, headerRect.y, labelWidth, headerRect.height);
             Rect fieldRect = new Rect(headerRect.x + labelWidth, headerRect.y, headerRect.width - labelWidth, headerRect.height);
 
-            // Label
             EditorGUI.LabelField(labelRect, property.displayName);
-
-            // Object field
             EditorGUI.ObjectField(fieldRect, property, GUIContent.none);
 
-            // Toggle expansion when clicking anywhere on header
+            // Toggle expansion on click
             if (Event.current.type == EventType.MouseDown && headerRect.Contains(Event.current.mousePosition))
             {
                 expanded = !expanded;
@@ -393,7 +400,7 @@ namespace MVsToolkit.Dev
                 Event.current.Use();
             }
 
-            // --- DRAW INTERNAL FIELDS ---
+            // --- INTERNAL FIELDS ---
             if (expanded)
             {
                 GUILayout.Space(2);
