@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField, Handle(Space.Self)] Vector3 handle1;
-    [SerializeField, Handle] Vector2 handle2;
+    public int tmp;
+    public SSO_Test tst;
+    public int tmp1;
 }

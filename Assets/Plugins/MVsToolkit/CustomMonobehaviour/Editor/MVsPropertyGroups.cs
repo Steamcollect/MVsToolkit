@@ -48,11 +48,15 @@ namespace MVsToolkit.Dev
     {
         public SerializedProperty property;
 
-        public MVsPropertyField() { }
         public MVsPropertyField(SerializedProperty prop)
         {
             property = prop;
         }
+    }
+
+    public class MVsSOField : MVsPropertyField 
+    {
+        public MVsSOField(SerializedProperty prop) : base(prop) { }
     }
 
     public class MVsHandleData

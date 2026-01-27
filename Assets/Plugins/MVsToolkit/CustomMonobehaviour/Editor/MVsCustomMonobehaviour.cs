@@ -12,9 +12,10 @@ namespace MVsToolkit.Dev
         public List<MVsInspectorPropertyGroup> propertyGroups = new List<MVsInspectorPropertyGroup>();
         public List<MVsHandleData> handles = new List<MVsHandleData>();
 
-        private GUIStyle _helpBoxNoTopMargin;
+        GUIStyle _helpBoxNoTopMargin;
 
-        private readonly Dictionary<MVsFoldoutGroup, bool> _foldoutStates = new();
+        readonly Dictionary<MVsFoldoutGroup, bool> _foldoutStates = new();
+        readonly Dictionary<MVsSOField, bool> _soStates = new();
 
         private void OnEnable()
         {
@@ -112,13 +113,18 @@ namespace MVsToolkit.Dev
                 if (propertyGroups.Count == 0)
                     InitializeData();
 
+                MVsPropertyField item =
+                    (prop.propertyType == SerializedPropertyType.ObjectReference
+                    && prop.objectReferenceValue is ScriptableObject) ? new MVsSOField(prop) : new MVsPropertyField(prop);
+
+
                 if (propertyGroups.GetLast().tabs.Count == 0)
                     propertyGroups.GetLast().tabs.Add(new MVsTabGroup());
 
                 if (propertyGroups.GetLast().tabs.GetLast().currentFoldout != null)
-                    propertyGroups.GetLast().tabs.GetLast().currentFoldout.fields.Add(new MVsPropertyField(prop));
+                    propertyGroups.GetLast().tabs.GetLast().currentFoldout.fields.Add(item);
                 else
-                    propertyGroups.GetLast().tabs.GetLast().items.Add(new MVsPropertyField(prop));
+                    propertyGroups.GetLast().tabs.GetLast().items.Add(item);
             }
             while (iterator.NextVisible(false));
         }
@@ -227,11 +233,6 @@ namespace MVsToolkit.Dev
 
         void DrawScriptField()
         {
-            FieldInfo field = target.GetType().GetField(
-                "m_Script",
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
-            );
-
             GUI.enabled = false;
             GUILayout.Space(1);
             EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"), true);
@@ -332,14 +333,11 @@ namespace MVsToolkit.Dev
                 case MVsPropertyField pf:
                     if (pf.property != null)
                     {
-                        if (pf.property.name == "m_Script")
+                        if (pf.property.name != "m_Script")
                         {
-                            GUI.enabled = false;
-                            EditorGUILayout.PropertyField(pf.property, true);
-                            GUI.enabled = true;
-                            GUILayout.Space(4);
+                            if (pf is MVsSOField) DrawScriptableObjectProperty(pf.property);
+                            else EditorGUILayout.PropertyField(pf.property, true);
                         }
-                        else EditorGUILayout.PropertyField(pf.property, true);
                     }
                     break;
                 case MVsFoldoutGroup fg:
@@ -348,6 +346,11 @@ namespace MVsToolkit.Dev
                 default:
                     break;
             }
+        }
+
+        void DrawScriptableObjectProperty(SerializedProperty property)
+        {
+            EditorGUILayout.ObjectField(property);
         }
 
         void DrawFoldoutGroup(MVsFoldoutGroup fg)
