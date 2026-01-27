@@ -2,9 +2,9 @@ using System;
 using UnityEngine;
 using IEnumerator = System.Collections.IEnumerator;
 
-namespace MVsToolkit.Utils
+namespace MVsToolkit.Utilities
 {
-    public static class CoroutineUtils
+    public static class MVsCoroutine
     {
         public static void Delay(this MonoBehaviour hook, Action ev, YieldInstruction yieldInstruction)
         {

@@ -2,7 +2,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using MVsToolkit.Utils;
+using MVsToolkit.Utilities;
 
 public class SecretSantaSelector : MonoBehaviour
 {

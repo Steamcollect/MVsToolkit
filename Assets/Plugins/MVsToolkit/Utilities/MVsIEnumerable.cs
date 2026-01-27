@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace MVsToolkit.Utils
+namespace MVsToolkit.Utilities
 {
-    public static class IEnumerableUtils
+    public static class MVsIEnumerable
     {
         public static T GetRandom<T>(this IEnumerable<T> elems)
         {

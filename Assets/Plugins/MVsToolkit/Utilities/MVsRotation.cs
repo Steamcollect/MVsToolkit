@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace MVsToolkit.Utils
+namespace MVsToolkit.Utilities
 {
-    public static class RotationUtils
+    public static class MVsRotation
     {
         public static Quaternion QuaternionSmoothDamp(Quaternion current, Quaternion target, ref Vector3 currentVelocity, float smoothTime)
         {

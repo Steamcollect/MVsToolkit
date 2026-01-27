@@ -9,6 +9,16 @@ namespace MVsToolkit.Wrappers
 
         public event Action<T> OnChanged;
 
+        public T Value
+        {
+            get => value;
+            set
+            {
+                this.value = value;
+                OnChanged?.Invoke(value);
+            }
+        }
+
         public T Get()
         {
             return value;
