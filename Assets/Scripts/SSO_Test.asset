@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d49278c1afd48c439da5ccf9c6ea8ae, type: 3}
   m_Name: SSO_Test
   m_EditorClassIdentifier: Assembly-CSharp::SSO_Test
-  id: 0
-  _name: 
-  _description: 
+  id: 12
+  _name: My name
+  _description: blablabla descfiption yaaaa

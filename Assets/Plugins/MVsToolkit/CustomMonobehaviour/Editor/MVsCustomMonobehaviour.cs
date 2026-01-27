@@ -12,7 +12,7 @@ namespace MVsToolkit.Dev
         public List<MVsInspectorPropertyGroup> propertyGroups = new List<MVsInspectorPropertyGroup>();
         public List<MVsHandleData> handles = new List<MVsHandleData>();
 
-        GUIStyle _helpBoxNoTopMargin;
+        GUIStyle _helpBoxNoTopMargin, _helpBoxNoMargin;
 
         readonly Dictionary<MVsFoldoutGroup, bool> _foldoutStates = new();
         readonly Dictionary<MVsSOField, bool> _soStates = new();
@@ -350,7 +350,73 @@ namespace MVsToolkit.Dev
 
         void DrawScriptableObjectProperty(SerializedProperty property)
         {
-            EditorGUILayout.ObjectField(property);
+            if (property.objectReferenceValue == null)
+            {
+                EditorGUILayout.ObjectField(property);
+                return;
+            }
+
+            ScriptableObject so = property.objectReferenceValue as ScriptableObject;
+            if (so == null)
+            {
+                EditorGUILayout.ObjectField(property);
+                return;
+            }
+
+            // Persistent key
+            string foldKey = GetPrefsPrefix() + "_soFoldout_" + property.propertyPath;
+            bool expanded = EditorPrefs.GetBool(foldKey, false);
+
+            // --- HelpBox with zero margins ---
+            GUIStyle box = GetNoMarginHelpBoxStyle();
+
+            EditorGUILayout.BeginVertical(box); // no margin, no padding
+
+            // --- HEADER (no foldout arrow, looks like a normal field) ---
+            Rect headerRect = EditorGUILayout.GetControlRect(false);
+
+            float labelWidth = EditorGUIUtility.labelWidth;
+            Rect labelRect = new Rect(headerRect.x, headerRect.y, labelWidth, headerRect.height);
+            Rect fieldRect = new Rect(headerRect.x + labelWidth, headerRect.y, headerRect.width - labelWidth, headerRect.height);
+
+            // Label
+            EditorGUI.LabelField(labelRect, property.displayName);
+
+            // Object field
+            EditorGUI.ObjectField(fieldRect, property, GUIContent.none);
+
+            // Toggle expansion when clicking anywhere on header
+            if (Event.current.type == EventType.MouseDown && headerRect.Contains(Event.current.mousePosition))
+            {
+                expanded = !expanded;
+                EditorPrefs.SetBool(foldKey, expanded);
+                Event.current.Use();
+            }
+
+            // --- DRAW INTERNAL FIELDS ---
+            if (expanded)
+            {
+                GUILayout.Space(2);
+
+                SerializedObject soSerialized = new SerializedObject(so);
+                SerializedProperty iterator = soSerialized.GetIterator();
+
+                bool enterChildren = true;
+                while (iterator.NextVisible(enterChildren))
+                {
+                    if (iterator.propertyPath == "m_Script")
+                        continue;
+
+                    EditorGUILayout.PropertyField(iterator, true);
+                    enterChildren = false;
+                }
+
+                soSerialized.ApplyModifiedProperties();
+                GUILayout.Space(2);
+            }
+
+            EditorGUILayout.EndVertical();
+            GUILayout.Space(4);
         }
 
         void DrawFoldoutGroup(MVsFoldoutGroup fg)
@@ -496,9 +562,19 @@ namespace MVsToolkit.Dev
             {
                 _helpBoxNoTopMargin = new GUIStyle(EditorStyles.helpBox);
                 RectOffset m = _helpBoxNoTopMargin.margin;
-                _helpBoxNoTopMargin.margin = new RectOffset(m.left, m.right, 0, m.bottom);
+                _helpBoxNoTopMargin.margin = new RectOffset(m.left, m.right, 0, 0);
             }
             return _helpBoxNoTopMargin;
+        }
+        GUIStyle GetNoMarginHelpBoxStyle()
+        {
+            if(_helpBoxNoMargin == null)
+            {
+                _helpBoxNoMargin = new GUIStyle(EditorStyles.helpBox);
+                _helpBoxNoMargin.margin = new RectOffset(0, 0, 0, 0);
+                _helpBoxNoMargin.padding = new RectOffset(0, 0, 0, 0);
+            }
+            return _helpBoxNoMargin;
         }
 
         // Persistency helpers: store selections per target instance and component type
