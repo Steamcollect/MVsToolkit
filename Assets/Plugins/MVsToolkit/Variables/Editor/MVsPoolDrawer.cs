@@ -6,16 +6,6 @@ namespace MVsToolkit.Pool
     [CustomPropertyDrawer(typeof(PoolObject<>))]
     public class MVsPoolDrawer : PropertyDrawer
     {
-        public static class MVsToolkitMenu
-        {
-            [MenuItem("Tools/MVsToolkit/Preferences")]
-            public static void OpenPreferences()
-            {
-                SettingsService.OpenUserPreferences("Preferences/MVs Toolkit");
-            }
-        }
-
-
         // Visual padding inside the helpBox
         private readonly RectOffset _boxPadding = new RectOffset(16, 8, 4, 4);
         private GUIStyle _helpBox;

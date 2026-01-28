@@ -13,6 +13,12 @@ namespace MVsToolkit.Preferences
             Values = MVsToolkitPreferencesStorage.Load();
         }
 
+        [MenuItem("Tools/MVsToolkit/Preferences")]
+        public static void OpenPreferences()
+        {
+            SettingsService.OpenUserPreferences("Preferences/MVs Toolkit");
+        }
+
         [SettingsProvider]
         public static SettingsProvider CreatePreferencesProvider()
         {
