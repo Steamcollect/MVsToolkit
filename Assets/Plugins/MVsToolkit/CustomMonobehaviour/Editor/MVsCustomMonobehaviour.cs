@@ -392,10 +392,10 @@ namespace MVsToolkit.Dev
             EditorGUI.LabelField(labelRect, property.displayName);
             EditorGUI.ObjectField(fieldRect, property, GUIContent.none);
 
-            // Toggle expansion on click
+
             if (Event.current.type == EventType.MouseDown 
                 && headerRect.Contains(Event.current.mousePosition)
-                && !Event.current.IsRightMouseButton())
+                && Event.current.button == 0)
             {
                 expanded = !expanded;
                 EditorPrefs.SetBool(foldKey, expanded);
