@@ -29,10 +29,10 @@ namespace MVsToolkit.Pool
 
             float totalHeight = GetPropertyHeight(property, label);
 
-            var boxRect = new Rect(position.x, position.y, position.width, totalHeight);
+            Rect boxRect = new Rect(position.x, position.y, position.width, totalHeight);
             GUI.Box(boxRect, GUIContent.none, _helpBox);
 
-            var headerRect = new Rect(boxRect.x + _boxPadding.left, boxRect.y + _boxPadding.top, boxRect.width - _boxPadding.horizontal, lineH);
+            Rect headerRect = new Rect(boxRect.x + _boxPadding.left, boxRect.y + _boxPadding.top, boxRect.width - _boxPadding.horizontal, lineH);
             property.isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, label, true);
 
             float y = headerRect.y + lineH + vsp;
@@ -47,7 +47,8 @@ namespace MVsToolkit.Pool
                 if (prefabProp != null)
                 {
                     float labelWidth = EditorGUIUtility.labelWidth;
-                    Rect fieldRect = new Rect(headerRect.x + labelWidth, headerRect.y, headerRect.width - labelWidth, headerRect.height);
+                    Rect labelRect = new Rect(headerRect.x, headerRect.y, labelWidth, headerRect.height);
+                    Rect fieldRect = new Rect(headerRect.x + labelWidth - 14, headerRect.y, headerRect.width - labelWidth + 18, headerRect.height);
 
                     EditorGUI.PropertyField(fieldRect, prefabProp, GUIContent.none);
                 }
@@ -105,16 +106,18 @@ namespace MVsToolkit.Pool
             {
                 var prefabProp = property.FindPropertyRelative("prefab");
                 if (prefabProp != null)
-                    height += EditorGUIUtility.singleLineHeight + vsp + 5; // prefab row
+                    height += EditorGUIUtility.singleLineHeight + vsp + 5;
 
-                // Three rows for toggles
                 height += (EditorGUIUtility.singleLineHeight + vsp) * 3f;
-            }
 
-            // Add visual padding from helpBox
-            height += _boxPadding.vertical;
-            return height;
+                // Only add padding when expanded
+                height += _boxPadding.vertical;
+            }
+            else height += 6;
+
+                return height;
         }
+
 
         private void DrawToggleAndFieldSameLine(ref float y, Rect position, float lineH, float vsp, string label, SerializedProperty toggleProp, SerializedProperty fieldProp)
         {
