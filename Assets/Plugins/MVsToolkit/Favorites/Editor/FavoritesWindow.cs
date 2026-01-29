@@ -108,13 +108,13 @@ namespace MVsToolkit.Favorites
             EditorGUILayout.Space();
 
 
-            foreach (var item in folder.Items)
+            foreach (var item in folder.Elements)
             {
                 EditorGUILayout.BeginHorizontal("box");
-                var preview = m_FavoritesService.Storage.GetPreview(item);
+                var preview = m_FavoritesService.Storage.Resolve(item).Preview;
                 GUILayout.Label(preview ? preview : Texture2D.grayTexture, GUILayout.Width(64), GUILayout.Height(64));
                 EditorGUILayout.BeginVertical();
-                EditorGUILayout.LabelField(item.ItemGuid.ToString());
+                EditorGUILayout.LabelField(item.Name);
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Focus", GUILayout.Width(60)))
                 {
@@ -172,7 +172,7 @@ namespace MVsToolkit.Favorites
                         {
                             string path = AssetDatabase.GetAssetPath(obj);
                             string guid = AssetDatabase.AssetPathToGUID(path);
-                            FavoriteItem item = new()
+                            FavoritesAsset resources = new()
                             {
                                 ItemGuid = new GUID(guid)
                             };
@@ -182,7 +182,7 @@ namespace MVsToolkit.Favorites
                                 m_SelectedFolderIndex = 0;
                             }
                             var folder = m_FavoritesService.Storage.FavoritesData.Folders[m_SelectedFolderIndex];
-                            m_FavoritesService.AddItemToFolder(folder, item);
+                            m_FavoritesService.AddItem(folder, resources);
                         }
                     }
                     Event.current.Use();

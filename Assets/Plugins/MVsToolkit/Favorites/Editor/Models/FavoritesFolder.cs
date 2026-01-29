@@ -7,8 +7,12 @@ namespace MVsToolkit.Favorites
     [Serializable]
     public class FavoritesFolder
     {
+        #region Fields
+
         public string Name = "New Folder";
         public Color Color = Color.white;
-        public HashSet<FavoriteItem> Items = new();
+        public List<IFavoritesElement> Elements = new();
+
+        #endregion
     }
 }

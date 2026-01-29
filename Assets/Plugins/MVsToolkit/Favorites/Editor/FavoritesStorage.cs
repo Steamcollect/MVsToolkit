@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,28 +6,20 @@ namespace MVsToolkit.Favorites
 {
     public class FavoritesStorage
     {
+        #region Fields
+
         private static readonly string s_FavoriteKeyEditorPrefs = "MVsToolkit_FavoritesData";
         
+        private readonly Dictionary<IFavoritesElement, IFavoritesCacheElement> m_Cache = new();
         private FavoritesData m_FavoritesData;
+        #endregion
         
+        #region Properties
         public FavoritesData FavoritesData => m_FavoritesData;
-        
-        public void Save()
-        {
-            if (m_FavoritesData == null) return;
-            string jsonData = EditorJsonUtility.ToJson(m_FavoritesData, true);
-            EditorPrefs.SetString(s_FavoriteKeyEditorPrefs, jsonData);
-            
-            Debug.Log(jsonData);
-        }
+        #endregion
 
-        public void Reset()
-        {
-            m_FavoritesData = new FavoritesData();
-            if (EditorPrefs.HasKey(s_FavoriteKeyEditorPrefs))
-                EditorPrefs.DeleteKey(s_FavoriteKeyEditorPrefs);
-        }
-        
+        #region Serialization
+
         public void Load()
         {
             m_FavoritesData = new FavoritesData();
@@ -42,13 +33,29 @@ namespace MVsToolkit.Favorites
             }
         }
         
-        public Texture GetPreview(FavoriteItem item)
+        public void Save()
         {
-           Object obj = item.GetObject();
-           if (obj == null)
-                return null;
-           Texture2D preview = AssetPreview.GetAssetPreview(obj);
-           return preview;
+            if (m_FavoritesData == null) return;
+            string jsonData = EditorJsonUtility.ToJson(m_FavoritesData, true);
+            EditorPrefs.SetString(s_FavoriteKeyEditorPrefs, jsonData);
         }
+
+        public void Reset()
+        {
+            m_FavoritesData = new FavoritesData();
+            if (EditorPrefs.HasKey(s_FavoriteKeyEditorPrefs))
+                EditorPrefs.DeleteKey(s_FavoriteKeyEditorPrefs);
+        }
+
+        #endregion
+
+        #region Cache
+
+        public IFavoritesCacheElement Resolve(IFavoritesElement element)
+        {
+            return m_Cache.GetValueOrDefault(element);
+        }
+
+        #endregion
     }
 }

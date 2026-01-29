@@ -19,42 +19,32 @@ namespace MVsToolkit.Favorites
         {
             m_Storage = new FavoritesStorage();
             Storage.Load();
-            ValidateData();
+            VerifyData();
         }
-
-        public void DeleteItem()
+        
+        public void Shutdown()
         {
-            throw new NotImplementedException();
+            m_Storage.Save();
         }
 
-        public void DeleteFolder()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Reorder()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ValidateData()
+        private void VerifyData()
         {
             foreach (var folder in m_Storage.FavoritesData.Folders)
             {
-                foreach (FavoriteItem item in folder.Items.ToArray())
+                foreach (IFavoritesElement element in folder.Elements.ToArray())
                 {
-                    if (!item.IsValid())
+                    if (!element.IsValid())
                     {
-                        folder.Items.Remove(item);
+                        folder.Elements.Remove(element);
                     }
                 }
             }
             m_Storage.Save();
         }
 
-        public void FocusElement(FavoriteItem item)
+        public void FocusElement(IFavoritesElement element)
         {
-            Object obj = item.GetObject();
+            Object obj = element.GetObject();
             if (!obj) return;
             //TODO: Test in prefab mode && scene objects
             Selection.activeObject = obj;
@@ -71,13 +61,32 @@ namespace MVsToolkit.Favorites
             m_Storage.FavoritesData.Folders.Add(folder);
             m_Storage.Save();
         }
-
-        public void AddItemToFolder(FavoritesFolder folder, FavoriteItem item)
+        
+        public void DeleteFolder(FavoritesFolder folder)
         {
-            // throw new NotImplementedException();
-            folder.Items.Add(item);
+            throw new NotImplementedException();
+            m_Storage.FavoritesData.Folders.Remove(folder);
             m_Storage.Save();
         }
+        
+        public void LoadFolder(FavoritesFolder folder)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddItem(FavoritesFolder folder, FavoritesAsset resources)
+        {
+            throw new NotImplementedException();
+            folder.Elements.Add(resources);
+            m_Storage.Save();
+        }
+        
+        public void RemoveItem()
+        {
+            throw new NotImplementedException();
+        }
+
+        
     }
 }
 

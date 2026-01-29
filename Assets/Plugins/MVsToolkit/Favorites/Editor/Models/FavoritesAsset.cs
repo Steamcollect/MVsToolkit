@@ -1,22 +1,24 @@
 using System;
 using UnityEditor;
+using Object = UnityEngine.Object;
 
 namespace MVsToolkit.Favorites
 {
     [Serializable]
-    public class FavoriteItem
+    public class FavoritesAsset : IFavoritesElement
     {
         public GUID ItemGuid;
-        
+
+        public string Name => GetObject() != null ? GetObject().name : "Missing Asset";
+
         public bool IsValid()
         {
             return !ItemGuid.Equals(null) && AssetDatabase.GUIDToAssetPath(ItemGuid) != string.Empty;
         }
 
-        public UnityEngine.Object GetObject()
+        public Object GetObject()
         {
-            return !IsValid() ? null : AssetDatabase.LoadAssetByGUID<UnityEngine.Object>(ItemGuid);
+            return !IsValid() ? null : AssetDatabase.LoadAssetByGUID<Object>(ItemGuid);
         }
-        
     }
 }
