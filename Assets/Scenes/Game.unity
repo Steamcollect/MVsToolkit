@@ -148,7 +148,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d8a0c29611bd4f49a3297f1e6275e55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  tmp:
+    prefab: {fileID: 1336551785}
+    m_SetParent: 0
+    parent: {fileID: 0}
+    m_LimitSize: 0
+    MaximumPoolSize: 0
+    m_Prewarm: 0
+    PrewarmCount: 0
   tst: {fileID: 11400000, guid: b95bc8cb770d0cf4c914619d69b32c35, type: 2}
+  tmp1: 0
 --- !u!4 &1128807760
 Transform:
   m_ObjectHideFlags: 0

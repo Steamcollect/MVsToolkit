@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace MVsToolkit.Pool
@@ -22,6 +22,8 @@ namespace MVsToolkit.Pool
             {
                 _helpBox = new GUIStyle(EditorStyles.helpBox)
                 {
+                    margin = new RectOffset(0, 0, 0, 0),
+                    padding = new RectOffset(0, 0, 0, 0)
                 };
             }
 
@@ -34,6 +36,31 @@ namespace MVsToolkit.Pool
             property.isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, label, true);
 
             float y = headerRect.y + lineH + vsp;
+
+            // Header foldout
+
+            // If collapsed → draw prefab field inline
+            if (!property.isExpanded)
+            {
+                SerializedProperty prefabProp = property.FindPropertyRelative("prefab");
+
+                if (prefabProp != null)
+                {
+                    // Right side of header
+                    var prefabRect = new Rect(
+                        headerRect.x + headerRect.width * 0.45f, // start around mid
+                        headerRect.y,
+                        headerRect.width * 0.55f - 4f,
+                        lineH
+                    );
+
+                    EditorGUI.PropertyField(prefabRect, prefabProp, GUIContent.none);
+                }
+
+                EditorGUI.EndProperty();
+                return; // stop drawing the expanded content
+            }
+
 
             if (property.isExpanded)
             {
