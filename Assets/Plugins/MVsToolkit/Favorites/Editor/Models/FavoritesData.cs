@@ -1,10 +1,12 @@
+using System;
 using System.Collections.Generic;
 
 namespace MVsToolkit.Favorites
 {
+    [Serializable]
     public class FavoritesData 
     {
-        public List<FavoriteFolderData> Folders = new();
+        public List<FavoritesFolder> Folders = new();
     }
 }
 
