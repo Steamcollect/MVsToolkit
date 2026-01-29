@@ -46,15 +46,10 @@ namespace MVsToolkit.Pool
 
                 if (prefabProp != null)
                 {
-                    // Right side of header
-                    var prefabRect = new Rect(
-                        headerRect.x + headerRect.width * 0.45f, // start around mid
-                        headerRect.y,
-                        headerRect.width * 0.55f - 4f,
-                        lineH
-                    );
+                    float labelWidth = EditorGUIUtility.labelWidth;
+                    Rect fieldRect = new Rect(headerRect.x + labelWidth, headerRect.y, headerRect.width - labelWidth, headerRect.height);
 
-                    EditorGUI.PropertyField(prefabRect, prefabProp, GUIContent.none);
+                    EditorGUI.PropertyField(fieldRect, prefabProp, GUIContent.none);
                 }
 
                 EditorGUI.EndProperty();
