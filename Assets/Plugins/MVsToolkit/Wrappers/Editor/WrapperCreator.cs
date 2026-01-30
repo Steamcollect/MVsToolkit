@@ -63,26 +63,30 @@ public class WrapperCreator : EditorWindow
         scriptName = StringVariable("Name", scriptName);
 
         GetFirstWordIfSplitByUppercase(scriptName, out string output);
-        lastScriptPath = scriptPath + (isScriptPathModify || output == string.Empty ? "" : output + "/");
-        lastAssetPath = assetPath + (isAssetPathModify || output == string.Empty ? "" : output + "/");
+        lastScriptPath = NormalizePath(scriptPath + (isScriptPathModify || output == string.Empty ? "" : output));
+        lastAssetPath = NormalizePath(assetPath + (isAssetPathModify || output == string.Empty ? "" : output));
 
         valueType = StringVariable("Type", valueType);
 
         GUILayout.Space(spacing);
 
-        DrawPathButton(lastScriptPath, "Folder Icon", () =>
+        DrawPathButton(DisplayPath(lastScriptPath), "Folder Icon", () =>
         {
             string path = GetFolderPath("Select Script Folder", scriptPath);
             if (path != scriptPath)
             {
-                path += "/";
                 isScriptPathModify = true;
             }
-            scriptPath = path;
+            scriptPath = NormalizePath(path);
         });
-        DrawPathButton(lastAssetPath, "Folder Icon", () =>
+        DrawPathButton(DisplayPath(lastAssetPath), "Folder Icon", () =>
         {
-            assetPath = GetFolderPath("Select Asset Folder", assetPath);
+            string path = GetFolderPath("Select Asset Folder", assetPath);
+            if (path != assetPath)
+            {
+                isAssetPathModify = true;
+            }
+            assetPath = NormalizePath(path);
         });
 
         GUILayout.Space(spacing);
@@ -140,17 +144,16 @@ public class WrapperCreator : EditorWindow
 
     string GetFolderPath(string label, string startingPath)
     {
-        string absolutePath = EditorUtility.OpenFolderPanel(
-            label,
-            "Assets",
-            ""
-        );
+        string absolutePath = EditorUtility.OpenFolderPanel(label, "Assets", "");
 
         if (!string.IsNullOrEmpty(absolutePath))
         {
             string projectPath = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length);
-            return absolutePath.Replace(projectPath, "");
+
+            string relative = absolutePath.Replace(projectPath, "");
+            return NormalizePath(relative);
         }
+
         return startingPath;
     }
 
@@ -245,5 +248,28 @@ public class WrapperCreator : EditorWindow
                 return;
             }
         }
+    }
+    private static string NormalizePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return "";
+
+        path = path.Replace("\\", "/");
+
+        // Supprime les doubles slash
+        while (path.Contains("//"))
+            path = path.Replace("//", "/");
+
+        // Ajoute un slash final si absent
+        if (!path.EndsWith("/"))
+            path += "/";
+
+        return path;
+    }
+    private static string DisplayPath(string fullPath)
+    {
+        if (fullPath.StartsWith("Assets/"))
+            return fullPath.Substring("Assets/".Length);
+        return fullPath;
     }
 }
