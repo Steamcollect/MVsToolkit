@@ -1,14 +1,33 @@
+﻿using System;
 using UnityEditor;
 using UnityEngine;
 
 public class WrapperCreator : EditorWindow
 {
-    private bool isDragging;
-    private Vector2 dragStartScreen;
-    private Vector2 windowStartPos;
-    private const float HeaderHeight = 22f;
+    string scriptName;
+    string valueType;
+    string scriptPath = "App/Scripts/Wrappers/";
+    string lastScriptPath;
+    string assetPath = "App/Datas/";
+    string lastAssetPath;
 
-    private int dragControlId;
+    public bool isScriptPathModify = false;
+    public bool isAssetPathModify = false;
+
+    static float margin = 8;
+    static float fieldWidth = 250;
+    static float fieldHeight = 18;
+    static float spacing = 15;
+
+    WrapperType wrapperType;
+    enum WrapperType { RSO, RSE, RSF}
+
+    bool isDragging;
+    Vector2 dragStartScreen;
+    Vector2 windowStartPos;
+    const float HeaderHeight = 22f;
+
+    int dragControlId;
 
     public Rect newPosition;
 
@@ -19,8 +38,11 @@ public class WrapperCreator : EditorWindow
         var window = CreateInstance<WrapperCreator>();
         window.titleContent = new GUIContent("Wrapper Creator");
 
-        float initialWidth = 400;
-        float initialHeight = 200;
+        window.isScriptPathModify = false;
+        window.isAssetPathModify = false;
+
+        float initialWidth = fieldWidth + margin * 2;
+        float initialHeight = HeaderHeight + margin * 2 + fieldHeight * 5 + spacing * 2 + 8;
 
         Rect rect = new Rect(
             (Screen.currentResolution.width - initialWidth) / 2f,
@@ -30,26 +52,106 @@ public class WrapperCreator : EditorWindow
         );
 
         window.newPosition = rect;
-
-        window.minSize = new Vector2(300, 150);
-        window.maxSize = new Vector2(500, 800);
-
         window.ShowPopup();
     }
 
     private void OnGUI()
     {
         DrawHeaderWithCloseAndDrag();
-        DrawRedBox();
+
+        GUILayout.Space(margin);
+        scriptName = StringVariable("Name", scriptName);
+
+        GetFirstWordIfSplitByUppercase(scriptName, out string output);
+        lastScriptPath = scriptPath + (isScriptPathModify || output == string.Empty ? "" : output + "/");
+        lastAssetPath = assetPath + (isAssetPathModify || output == string.Empty ? "" : output + "/");
+
+        valueType = StringVariable("Type", valueType);
+
+        GUILayout.Space(spacing);
+
+        DrawPathButton(lastScriptPath, "Folder Icon", () =>
+        {
+            string path = GetFolderPath("Select Script Folder", scriptPath);
+            if (path != scriptPath)
+            {
+                path += "/";
+                isScriptPathModify = true;
+            }
+            scriptPath = path;
+        });
+        DrawPathButton(lastAssetPath, "Folder Icon", () =>
+        {
+            assetPath = GetFolderPath("Select Asset Folder", assetPath);
+        });
+
+        GUILayout.Space(spacing);
+
+        DrawValidationButton();
+        GUILayout.Space(margin);
 
         position = newPosition;
     }
 
-    private void DrawRedBox()
+    string StringVariable(string label, string value)
     {
-        GUILayout.Space(10);
-        Rect box = GUILayoutUtility.GetRect(200, 200, GUILayout.ExpandWidth(false));
-        EditorGUI.DrawRect(box, Color.red);
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(margin);
+
+        GUILayout.Label(label, GUILayout.Width(fieldWidth * .3f), GUILayout.Height(fieldHeight));
+        value = GUILayout.TextField(value, GUILayout.Width(fieldWidth * .7f), GUILayout.Height(fieldHeight));
+
+        GUILayout.Space(margin);
+        EditorGUILayout.EndHorizontal();
+
+        return value;
+    }
+
+    void DrawPathButton(string label, string iconName, Action callback)
+    {
+        GUILayout.BeginHorizontal();
+        GUILayout.Space(margin);
+
+        GUILayout.Label(label, GUILayout.Height(fieldHeight));
+        if (GUILayout.Button(EditorGUIUtility.IconContent(iconName).image, GUILayout.Width(fieldHeight), GUILayout.Height(fieldHeight)))
+        {
+            callback.Invoke();
+        }
+        
+        GUILayout.Space(margin);
+        GUILayout.EndHorizontal();
+    }
+
+    void DrawValidationButton()
+    {
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(margin);
+
+        if (GUILayout.Button("Cancel"))
+        {
+            Close();
+            return;
+        }
+        GUILayout.Button("Create");
+
+        GUILayout.Space(margin);
+        EditorGUILayout.EndHorizontal();
+    }
+
+    string GetFolderPath(string label, string startingPath)
+    {
+        string absolutePath = EditorUtility.OpenFolderPanel(
+            label,
+            "Assets",
+            ""
+        );
+
+        if (!string.IsNullOrEmpty(absolutePath))
+        {
+            string projectPath = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length);
+            return absolutePath.Replace(projectPath, "");
+        }
+        return startingPath;
     }
 
     private void DrawHeaderWithCloseAndDrag()
@@ -59,7 +161,6 @@ public class WrapperCreator : EditorWindow
 
         GUI.Label(new Rect(5, 2, position.width - 40, 20), "    Wrapper Creator", EditorStyles.boldLabel);
 
-        // Close button
         Rect closeRect = new Rect(position.width - 22, 2, 18, 18);
         var closeStyle = new GUIStyle(EditorStyles.boldLabel)
         {
@@ -68,7 +169,7 @@ public class WrapperCreator : EditorWindow
         };
 
         EditorGUIUtility.AddCursorRect(closeRect, MouseCursor.Link);
-        if (GUI.Button(closeRect, "�", closeStyle))
+        if (GUI.Button(closeRect, "×", closeStyle))
         {
             Close();
             GUIUtility.ExitGUI();
@@ -120,6 +221,29 @@ public class WrapperCreator : EditorWindow
                     e.Use();
                 }
                 break;
+        }
+    }
+
+    public static void GetFirstWordIfSplitByUppercase(string input, out string output)
+    {
+        output = string.Empty;
+
+        if (string.IsNullOrEmpty(input))
+            return;
+
+        var parts = System.Text.RegularExpressions.Regex
+            .Split(input, @"(?=[A-Z])");
+
+        if (parts.Length <= 1)
+            return;
+
+        foreach (var p in parts)
+        {
+            if (!string.IsNullOrEmpty(p))
+            {
+                output = p;
+                return;
+            }
         }
     }
 }
