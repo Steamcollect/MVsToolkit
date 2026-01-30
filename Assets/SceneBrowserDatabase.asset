@@ -12,10 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd6f342bfd88c434b86af54508542005, type: 3}
   m_Name: SceneBrowserDatabase
   m_EditorClassIdentifier: Assembly-CSharp-Editor-firstpass::MVsToolkit.SceneBrowser.SceneBrowserDatabase
-  scenes:
-  - asset: {fileID: 102900000, guid: 399b58beb0665694c9269dc7137368a0, type: 3}
-    assetName: MVsToolkit_Demo
-    isFavorite: 1
-  - asset: {fileID: 102900000, guid: b6c5dd512bff1d14d93eb38350bd0895, type: 3}
-    assetName: Game
-    isFavorite: 0
+  scenes: []
