@@ -65,8 +65,8 @@ public class WrapperCreator : EditorWindow
         scriptName = StringVariable("Name", scriptName);
 
         GetFirstWordIfSplitByUppercase(scriptName, out string output);
-        lastScriptPath = NormalizePath(scriptPath + (isScriptPathModify || output == string.Empty ? "" : output));
-        lastAssetPath = NormalizePath(assetPath + (isAssetPathModify || output == string.Empty ? "" : output));
+        lastScriptPath = NormalizePath(scriptPath + (isScriptPathModify || output == string.Empty ? "" : output + GetWrapperOutputType()));
+        lastAssetPath = NormalizePath(assetPath + (isAssetPathModify || output == string.Empty ? "" : output + GetWrapperOutputType()));
 
         valueType = StringVariable("Type", valueType);
 
@@ -125,6 +125,13 @@ public class WrapperCreator : EditorWindow
         GUILayout.Space(margin);
 
         position = newPosition;
+        
+        Event e = Event.current;
+        if (e.type == EventType.KeyDown)
+        {
+            if(e.keyCode == KeyCode.Return) CreateButton();
+            if (e.keyCode == KeyCode.Escape) Close();
+        }
     }
 
     string StringVariable(string label, string value)
@@ -166,31 +173,34 @@ public class WrapperCreator : EditorWindow
 
         if (GUILayout.Button("Create"))
         {
-            string prefix = wrapperType.ToString() + "_";
-            string finalName = prefix + scriptName;
-
-            string fullPath = "Assets/" + lastScriptPath + ".cs";
-
-            if (scriptName == "")
-                problemType = ProblemType.NameMissing;
-            else if (valueType == "")
-                problemType = ProblemType.Type;
-            else if (scriptPath == "")
-                problemType = ProblemType.ScriptPath;
-            else if (assetPath == "")
-                problemType = ProblemType.AssetPath;
-            else if (System.IO.File.Exists(fullPath))
-                problemType = ProblemType.NameExist;
-            else
-            {
-                problemType = ProblemType.None;
-                ScriptFileGeneration();
-                Close();
-            }
+            CreateButton();
         }
 
         GUILayout.Space(margin);
         EditorGUILayout.EndHorizontal();
+    }
+
+    void CreateButton()
+    {
+        string finalName = GetWrapperPrefixType() + scriptName;
+        string fullPath = "Assets/" + lastScriptPath + finalName + ".cs";
+
+        if (scriptName == "")
+            problemType = ProblemType.NameMissing;
+        else if (valueType == "")
+            problemType = ProblemType.Type;
+        else if (scriptPath == "")
+            problemType = ProblemType.ScriptPath;
+        else if (assetPath == "")
+            problemType = ProblemType.AssetPath;
+        else if (System.IO.File.Exists(fullPath))
+            problemType = ProblemType.NameExist;
+        else
+        {
+            problemType = ProblemType.None;
+            ScriptFileGeneration(finalName, fullPath);
+            Close();
+        }
     }
 
     private void DrawHeaderWithCloseAndDrag()
@@ -220,45 +230,30 @@ public class WrapperCreator : EditorWindow
     }
 
     #region GenerationScript
-    void ScriptFileGeneration()
+    void ScriptFileGeneration(string finalName, string fullScriptPath)
     {
         string content = GenerateRSOScript();
-
-        string finalName = "RSO_" + scriptName;
-        string fullPath = "Assets/" + lastScriptPath + finalName + ".cs";
-
-        string directory = System.IO.Path.GetDirectoryName(fullPath);
+        string directory = System.IO.Path.GetDirectoryName(fullScriptPath);
         if (!System.IO.Directory.Exists(directory))
             System.IO.Directory.CreateDirectory(directory);
 
-        System.IO.File.WriteAllText(fullPath, content);
+        System.IO.File.WriteAllText(fullScriptPath, content);
         AssetDatabase.Refresh();
 
-        WrapperCreatorPostCompile.Register(scriptName, lastAssetPath);
+        //WrapperCreatorPostCompile.Register(scriptName, lastAssetPath);
     }
 
     string GenerateRSOScript()
     {
-        string finalName = "RSO_" + scriptName;
+        string finalName = GetWrapperPrefixType() + scriptName;
 
-        string parentFolder = "";
-        string[] parts = lastScriptPath.Split('/');
-        for (int i = parts.Length - 2; i >= 0; i--)
-        {
-            if (!string.IsNullOrEmpty(parts[i]))
-            {
-                parentFolder = parts[i];
-                break;
-            }
-        }
+        GetFirstWordIfSplitByUppercase(scriptName, out string output);
+        string soAssetPath = $"RSO/{output}/{scriptName}";
 
-        string filePath = $"RSO/{parentFolder}/{scriptName}";
-
-        // 4. Génération du script
         string scriptContent = WrapperTemplate.rsoTemplate
             .Replace("#SCRIPTNAME#", finalName)
             .Replace("RuntimeScriptableObject<>", $"RuntimeScriptableObject<{valueType}>")
-            .Replace("#FILE_PATH#", filePath + "/");
+            .Replace("#FILE_PATH#", soAssetPath);
 
         return scriptContent;
     }
@@ -368,6 +363,15 @@ public class WrapperCreator : EditorWindow
         }
 
         return startingPath;
+    }
+
+    string GetWrapperOutputType()
+    {
+        return $"/{wrapperType}/";
+    }
+    string GetWrapperPrefixType()
+    {
+        return $"{wrapperType}_";
     }
     #endregion
 }
