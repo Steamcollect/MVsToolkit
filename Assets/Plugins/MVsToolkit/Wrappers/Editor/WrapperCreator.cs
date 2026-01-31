@@ -344,16 +344,18 @@ public class WrapperCreator : EditorWindow
     #region GenerationScript
     void ScriptFileGeneration(string finalName, string fullScriptPath)
     {
-        string content = GenerateWrapperScript();
+        string content = GenerateWrapperScriptStr();
         string directory = System.IO.Path.GetDirectoryName(fullScriptPath);
+
         if (!System.IO.Directory.Exists(directory))
             System.IO.Directory.CreateDirectory(directory);
 
         System.IO.File.WriteAllText(fullScriptPath, content);
         AssetDatabase.Refresh();
+
     }
 
-    string GenerateWrapperScript()
+    string GenerateWrapperScriptStr()
     {
         switch (wrapperType)
         {
