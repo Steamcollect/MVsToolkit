@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class WrapperCreator : EditorWindow
 {
-    string scriptName;
-    string valueType;
+    string scriptName = "";
+    string valueType = "";
     string scriptPath = "App/Scripts/Wrappers/";
-    string lastScriptPath;
+    string lastScriptPath = "";
     string assetPath = "App/Datas/";
-    string lastAssetPath;
+    string lastAssetPath = "";
 
     public bool isScriptPathModify = false;
     public bool isAssetPathModify = false;
@@ -17,10 +17,12 @@ public class WrapperCreator : EditorWindow
     static float margin = 8;
     static float fieldWidth = 250;
     static float fieldHeight = 18;
-    static float spacing = 15;
 
     WrapperType wrapperType;
     enum WrapperType { RSO, RSE, RSF}
+
+    ProblemType problemType;
+    enum ProblemType { None, NameMissing, NameExist, Type, ScriptPath, AssetPath}
 
     bool isDragging;
     Vector2 dragStartScreen;
@@ -31,7 +33,7 @@ public class WrapperCreator : EditorWindow
 
     public Rect newPosition;
 
-    [MenuItem("Tools/MVsToolkit/WrapperCreator")]
+    [MenuItem("Tools/MVsToolkit/WrapperCreator %#m")]
     [MenuItem("Assets/Create/MVsToolkit/WrapperCreator")]
     public static void ShowWindow()
     {
@@ -42,7 +44,7 @@ public class WrapperCreator : EditorWindow
         window.isAssetPathModify = false;
 
         float initialWidth = fieldWidth + margin * 2;
-        float initialHeight = HeaderHeight + margin * 2 + fieldHeight * 5 + spacing * 2 + 8;
+        float initialHeight = HeaderHeight + margin * 2 + fieldHeight * 7 + 8;
 
         Rect rect = new Rect(
             (Screen.currentResolution.width - initialWidth) / 2f,
@@ -68,7 +70,35 @@ public class WrapperCreator : EditorWindow
 
         valueType = StringVariable("Type", valueType);
 
-        GUILayout.Space(spacing);
+        GUI.color = Color.red;
+        switch (problemType)
+        {
+            case ProblemType.None:
+                GUI.color = Color.white;
+                GUILayout.Space(fieldHeight); 
+                break;
+
+            case ProblemType.NameMissing:
+                GUILayout.Label("The name can't be empty");
+                break;
+
+            case ProblemType.NameExist:
+                GUILayout.Label("The name given already exist");
+                break;
+
+            case ProblemType.Type:
+                GUILayout.Label("The Type can't be empty");
+                break;
+
+            case ProblemType.ScriptPath:
+                GUILayout.Label("The script path can't be empty");
+                break;
+
+            case ProblemType.AssetPath:
+                GUILayout.Label("The asset path can't be empty");
+                break;
+        }
+        GUI.color = Color.white;
 
         DrawPathButton(DisplayPath(lastScriptPath), "Folder Icon", () =>
         {
@@ -89,7 +119,7 @@ public class WrapperCreator : EditorWindow
             assetPath = NormalizePath(path);
         });
 
-        GUILayout.Space(spacing);
+        GUILayout.Space(fieldHeight);
 
         DrawValidationButton();
         GUILayout.Space(margin);
@@ -132,29 +162,35 @@ public class WrapperCreator : EditorWindow
         GUILayout.Space(margin);
 
         if (GUILayout.Button("Cancel"))
-        {
             Close();
-            return;
+
+        if (GUILayout.Button("Create"))
+        {
+            string prefix = wrapperType.ToString() + "_";
+            string finalName = prefix + scriptName;
+
+            string fullPath = "Assets/" + lastScriptPath + ".cs";
+
+            if (scriptName == "")
+                problemType = ProblemType.NameMissing;
+            else if (valueType == "")
+                problemType = ProblemType.Type;
+            else if (scriptPath == "")
+                problemType = ProblemType.ScriptPath;
+            else if (assetPath == "")
+                problemType = ProblemType.AssetPath;
+            else if (System.IO.File.Exists(fullPath))
+                problemType = ProblemType.NameExist;
+            else
+            {
+                problemType = ProblemType.None;
+                ScriptFileGeneration();
+                Close();
+            }
         }
-        GUILayout.Button("Create");
 
         GUILayout.Space(margin);
         EditorGUILayout.EndHorizontal();
-    }
-
-    string GetFolderPath(string label, string startingPath)
-    {
-        string absolutePath = EditorUtility.OpenFolderPanel(label, "Assets", "");
-
-        if (!string.IsNullOrEmpty(absolutePath))
-        {
-            string projectPath = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length);
-
-            string relative = absolutePath.Replace(projectPath, "");
-            return NormalizePath(relative);
-        }
-
-        return startingPath;
     }
 
     private void DrawHeaderWithCloseAndDrag()
@@ -183,6 +219,52 @@ public class WrapperCreator : EditorWindow
         GUILayout.Space(HeaderHeight);
     }
 
+    #region GenerationScript
+    void ScriptFileGeneration()
+    {
+        string content = GenerateRSOScript();
+
+        string finalName = "RSO_" + scriptName;
+        string fullPath = "Assets/" + lastScriptPath + finalName + ".cs";
+
+        string directory = System.IO.Path.GetDirectoryName(fullPath);
+        if (!System.IO.Directory.Exists(directory))
+            System.IO.Directory.CreateDirectory(directory);
+
+        System.IO.File.WriteAllText(fullPath, content);
+        AssetDatabase.Refresh();
+
+        WrapperCreatorPostCompile.Register(scriptName, lastAssetPath);
+    }
+
+    string GenerateRSOScript()
+    {
+        string finalName = "RSO_" + scriptName;
+
+        string parentFolder = "";
+        string[] parts = lastScriptPath.Split('/');
+        for (int i = parts.Length - 2; i >= 0; i--)
+        {
+            if (!string.IsNullOrEmpty(parts[i]))
+            {
+                parentFolder = parts[i];
+                break;
+            }
+        }
+
+        string filePath = $"RSO/{parentFolder}/{scriptName}";
+
+        // 4. Génération du script
+        string scriptContent = WrapperTemplate.rsoTemplate
+            .Replace("#SCRIPTNAME#", finalName)
+            .Replace("RuntimeScriptableObject<>", $"RuntimeScriptableObject<{valueType}>")
+            .Replace("#FILE_PATH#", filePath + "/");
+
+        return scriptContent;
+    }
+    #endregion
+
+    #region Helper
     void HandleDrag(Rect closeRect, Rect headerRect)
     {
         dragControlId = GUIUtility.GetControlID(FocusType.Passive);
@@ -272,4 +354,20 @@ public class WrapperCreator : EditorWindow
             return fullPath.Substring("Assets/".Length);
         return fullPath;
     }
+
+    string GetFolderPath(string label, string startingPath)
+    {
+        string absolutePath = EditorUtility.OpenFolderPanel(label, "Assets", "");
+
+        if (!string.IsNullOrEmpty(absolutePath))
+        {
+            string projectPath = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length);
+
+            string relative = absolutePath.Replace(projectPath, "");
+            return NormalizePath(relative);
+        }
+
+        return startingPath;
+    }
+    #endregion
 }
