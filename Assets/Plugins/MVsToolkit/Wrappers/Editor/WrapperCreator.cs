@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 using MVsToolkit.Utilities;
+using System.Linq;
 
 public class WrapperCreator : EditorWindow
 {
@@ -21,6 +22,60 @@ public class WrapperCreator : EditorWindow
     static float margin = 8;
     static float fieldWidth = 250;
     static float fieldHeight = 18;
+
+    string[] wrapperPrefixMaskName = new string[]
+    {
+    // Unity event-like prefixes
+    "On",
+    "Before",
+    "After",
+
+    // Common action verbs
+    "Set",
+    "Get",
+    "Try",
+    "Do",
+    "Can",
+    "Has",
+    "Is",
+
+    // Lifecycle / state verbs
+    "Init",
+    "Initialize",
+    "Load",
+    "Save",
+    "Reset",
+    "Clear",
+    "Update",
+    "Refresh",
+
+    // Creation / destruction
+    "Create",
+    "Build",
+    "Generate",
+    "Destroy",
+    "Remove",
+    "Add",
+
+    // Execution / invocation
+    "Invoke",
+    "Call",
+    "Execute",
+    "Apply",
+
+    // Checks / validation
+    "Validate",
+    "Check",
+    "Ensure",
+
+    // Unity-specific lifecycle names (souvent utilisés comme préfixes)
+    "Awake",
+    "Start",
+    "Fixed",
+    "Late",
+    "Enable",
+    "Disable"
+    };
 
     WrapperType wrapperType;
     enum WrapperType { RSO, RSE, RSF}
@@ -67,7 +122,6 @@ public class WrapperCreator : EditorWindow
 
         GUILayout.Space(margin);
 
-        // --- Choix du WrapperType ---
         EditorGUILayout.BeginHorizontal();
         GUILayout.Space(margin);
 
@@ -437,7 +491,7 @@ public class WrapperCreator : EditorWindow
         return 1;
     }
 
-    public static void GetFirstWordIfSplitByUppercase(string input, out string output)
+    public void GetFirstWordIfSplitByUppercase(string input, out string output)
     {
         output = string.Empty;
 
@@ -445,19 +499,32 @@ public class WrapperCreator : EditorWindow
             return;
 
         var parts = System.Text.RegularExpressions.Regex
-            .Split(input, @"(?=[A-Z])");
+            .Split(input, @"(?=[A-Z])")
+            .Where(p => !string.IsNullOrEmpty(p))
+            .ToArray();
 
-        if (parts.Length <= 1)
+        if (parts.Length == 0)
             return;
 
-        foreach (var p in parts)
+        string first = parts[0];
+        string firstLower = first.ToLower();
+
+        bool isMasked = wrapperPrefixMaskName
+            .Any(m => m.ToLower() == firstLower);
+
+        if (isMasked)
         {
-            if (!string.IsNullOrEmpty(p))
+            if (parts.Length > 1)
             {
-                output = p;
+                output = parts[1];
                 return;
             }
+
+            output = string.Empty;
+            return;
         }
+
+        output = first;
     }
     private static string NormalizePath(string path)
     {
