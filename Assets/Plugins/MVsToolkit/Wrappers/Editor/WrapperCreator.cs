@@ -5,11 +5,15 @@ using UnityEngine;
 public class WrapperCreator : EditorWindow
 {
     string scriptName = "";
-    string valueType = "";
     string scriptPath = "App/Scripts/Wrappers/";
     string lastScriptPath = "";
     string assetPath = "App/Datas/";
     string lastAssetPath = "";
+
+    string valueA = "";
+    string valueB = "";
+    string valueC = "";
+    string returnValue = "";
 
     public bool isScriptPathModify = false;
     public bool isAssetPathModify = false;
@@ -86,7 +90,28 @@ public class WrapperCreator : EditorWindow
         lastScriptPath = NormalizePath(scriptPath + (isScriptPathModify || output == string.Empty ? "" : output + GetWrapperOutputType()));
         lastAssetPath = NormalizePath(assetPath + (isAssetPathModify || output == string.Empty ? "" : output + GetWrapperOutputType()));
 
-        valueType = StringVariable("Type", valueType);
+        GUILayout.Space(margin);
+        
+        switch (wrapperType)
+        {
+            case WrapperType.RSO:
+                valueA = StringVariable("Value", valueA);
+                break;
+
+            case WrapperType.RSE:
+                valueA = StringVariable("Value A", valueA);
+                valueB = StringVariable("Value B", valueB);
+                valueC = StringVariable("Value C", valueC);
+                break;
+
+            case WrapperType.RSF:
+                returnValue = StringVariable("Return", returnValue);
+                GUILayout.Space(margin * .5f);
+                valueA = StringVariable("Value A", valueA);
+                valueB = StringVariable("Value B", valueB);
+                break;
+        }
+
 
         GUI.color = Color.red;
         switch (problemType)
@@ -137,10 +162,20 @@ public class WrapperCreator : EditorWindow
             assetPath = NormalizePath(path);
         });
 
-        GUILayout.Space(fieldHeight);
+        GUILayout.Space(margin);
 
         DrawValidationButton();
         GUILayout.Space(margin);
+
+        float dynamicFields = GetFieldsHeight();
+
+        float baseHeight = HeaderHeight
+                           + margin * 2
+                           + fieldHeight * 7
+                           + dynamicFields;
+
+        newPosition.height = baseHeight;
+
 
         position = newPosition;
         
@@ -205,7 +240,7 @@ public class WrapperCreator : EditorWindow
 
         if (scriptName == "")
             problemType = ProblemType.NameMissing;
-        else if (valueType == "")
+        else if (valueA == "")
             problemType = ProblemType.Type;
         else if (scriptPath == "")
             problemType = ProblemType.ScriptPath;
@@ -270,7 +305,7 @@ public class WrapperCreator : EditorWindow
 
         string scriptContent = WrapperTemplate.rsoTemplate
             .Replace("#SCRIPTNAME#", finalName)
-            .Replace("RuntimeScriptableObject<>", $"RuntimeScriptableObject<{valueType}>")
+            .Replace("RuntimeScriptableObject<>", $"RuntimeScriptableObject<{valueA}>")
             .Replace("#FILE_PATH#", soAssetPath);
 
         return scriptContent;
@@ -320,6 +355,17 @@ public class WrapperCreator : EditorWindow
                 }
                 break;
         }
+    }
+
+    float GetFieldsHeight()
+    {
+        switch (wrapperType)
+        {
+            case WrapperType.RSO: return fieldHeight * 2 + margin;
+            case WrapperType.RSE: return fieldHeight * 4 + margin;
+            case WrapperType.RSF: return fieldHeight * 4 + margin * 1.5f;
+        }
+        return 1;
     }
 
     public static void GetFirstWordIfSplitByUppercase(string input, out string output)
