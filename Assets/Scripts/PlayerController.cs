@@ -1,12 +1,45 @@
+using System;
 using MVsToolkit.Dev;
-using MVsToolkit.Pool;
+using UnityEditor;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public PoolObject<GameObject> tmp;
+    public string scriptName;
+    public string exportPath;
 
-    [Space(30)]
-    public SSO_Test tst;
-    public int tmp1;
+    [Button]
+    void CreateAsset()
+    {
+        Type type = FindType(scriptName);
+
+        if (type == null)
+        {
+            Debug.LogError("Impossible de trouver le type : " + scriptName);
+            return;
+        }
+
+        ScriptableObject asset = ScriptableObject.CreateInstance(type);
+
+        string fullPath = "Assets/" + exportPath + scriptName + ".asset";
+
+        string dir = System.IO.Path.GetDirectoryName(fullPath);
+        if (!System.IO.Directory.Exists(dir))
+            System.IO.Directory.CreateDirectory(dir);
+
+        AssetDatabase.CreateAsset(asset, fullPath);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+    }
+
+    System.Type FindType(string typeName)
+    {
+        foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+        {
+            var type = asm.GetType(typeName);
+            if (type != null)
+                return type;
+        }
+        return null;
+    }
 }
