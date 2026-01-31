@@ -62,6 +62,24 @@ public class WrapperCreator : EditorWindow
         DrawHeaderWithCloseAndDrag();
 
         GUILayout.Space(margin);
+
+        // --- Choix du WrapperType ---
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(margin);
+
+        wrapperType = (WrapperType)GUILayout.Toolbar(
+            (int)wrapperType,
+            Enum.GetNames(typeof(WrapperType)),
+            GUILayout.Height(fieldHeight)
+        );
+
+        GUILayout.Space(margin);
+        EditorGUILayout.EndHorizontal();
+
+        GUILayout.Space(margin);
+
+
+        GUILayout.Space(margin);
         scriptName = StringVariable("Name", scriptName);
 
         GetFirstWordIfSplitByUppercase(scriptName, out string output);
