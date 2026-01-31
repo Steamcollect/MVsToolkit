@@ -1,11 +1,12 @@
 ﻿using System;
 using UnityEditor;
 using UnityEngine;
+using MVsToolkit.Utilities;
 
 public class WrapperCreator : EditorWindow
 {
     string scriptName = "";
-    string scriptPath = "App/Scripts/Wrappers/";
+    string scriptPath = "App/Scripts/";
     string lastScriptPath = "";
     string assetPath = "App/Datas/";
     string lastAssetPath = "";
@@ -13,7 +14,6 @@ public class WrapperCreator : EditorWindow
     string valueA = "";
     string valueB = "";
     string valueC = "";
-    string returnValue = "";
 
     public bool isScriptPathModify = false;
     public bool isAssetPathModify = false;
@@ -105,10 +105,10 @@ public class WrapperCreator : EditorWindow
                 break;
 
             case WrapperType.RSF:
-                returnValue = StringVariable("Return", returnValue);
+                valueA = StringVariable("Return", valueA);
                 GUILayout.Space(margin * .5f);
-                valueA = StringVariable("Value A", valueA);
-                valueB = StringVariable("Value B", valueB);
+                valueB = StringVariable("Value A", valueB);
+                valueC = StringVariable("Value B", valueC);
                 break;
         }
 
@@ -176,15 +176,8 @@ public class WrapperCreator : EditorWindow
 
         newPosition.height = baseHeight;
 
-
         position = newPosition;
-        
-        Event e = Event.current;
-        if (e.type == EventType.KeyDown)
-        {
-            if(e.keyCode == KeyCode.Return) CreateButton();
-            if (e.keyCode == KeyCode.Escape) Close();
-        }
+        HandleShortcuts();
     }
 
     string StringVariable(string label, string value)
@@ -240,7 +233,7 @@ public class WrapperCreator : EditorWindow
 
         if (scriptName == "")
             problemType = ProblemType.NameMissing;
-        else if (valueA == "")
+        else if (valueA == "" && wrapperType != WrapperType.RSE)
             problemType = ProblemType.Type;
         else if (scriptPath == "")
             problemType = ProblemType.ScriptPath;
@@ -282,18 +275,43 @@ public class WrapperCreator : EditorWindow
         GUILayout.Space(HeaderHeight);
     }
 
+    void HandleShortcuts()
+    {
+        Event e = Event.current;
+        if (e.type == EventType.KeyDown)
+        {
+            if (e.keyCode == KeyCode.Return) CreateButton();
+            if (e.keyCode == KeyCode.Escape) Close();
+            if (e.keyCode == KeyCode.LeftArrow) wrapperType = wrapperType.Previous();
+            if (e.keyCode == KeyCode.RightArrow) wrapperType = wrapperType.Next();
+        }
+    }
+
     #region GenerationScript
     void ScriptFileGeneration(string finalName, string fullScriptPath)
     {
-        string content = GenerateRSOScript();
+        string content = GenerateWrapperScript();
         string directory = System.IO.Path.GetDirectoryName(fullScriptPath);
         if (!System.IO.Directory.Exists(directory))
             System.IO.Directory.CreateDirectory(directory);
 
         System.IO.File.WriteAllText(fullScriptPath, content);
         AssetDatabase.Refresh();
+    }
 
-        //WrapperCreatorPostCompile.Register(scriptName, lastAssetPath);
+    string GenerateWrapperScript()
+    {
+        switch (wrapperType)
+        {
+            case WrapperType.RSO:
+                return GenerateRSOScript();
+            case WrapperType.RSE:
+                return GenerateRSEScript();
+            case WrapperType.RSF:
+                return GenerateRSFScript();
+        }
+
+        return GenerateRSOScript();
     }
 
     string GenerateRSOScript()
@@ -303,12 +321,63 @@ public class WrapperCreator : EditorWindow
         GetFirstWordIfSplitByUppercase(scriptName, out string output);
         string soAssetPath = $"RSO/{output}/{scriptName}";
 
-        string scriptContent = WrapperTemplate.rsoTemplate
+        string scriptContent = WrapperTemplate.rso
             .Replace("#SCRIPTNAME#", finalName)
             .Replace("RuntimeScriptableObject<>", $"RuntimeScriptableObject<{valueA}>")
             .Replace("#FILE_PATH#", soAssetPath);
 
         return scriptContent;
+    }
+    string GenerateRSEScript()
+    {
+        string finalName = GetWrapperPrefixType() + scriptName;
+
+        GetFirstWordIfSplitByUppercase(scriptName, out string output);
+        string soAssetPath = $"RSE/{output}/{scriptName}";
+
+        bool noValues = valueA == "" && valueB == "" && valueC == "";
+
+        string values = "";
+        if (!noValues)
+            values = ParseValues();
+
+        string scriptContent = WrapperTemplate.rso
+            .Replace("#SCRIPTNAME#", finalName)
+            .Replace("RuntimeScriptableObject<>", $"RuntimeScriptableEvent{values}")
+            .Replace("#FILE_PATH#", soAssetPath);
+
+        return scriptContent;
+    }
+    string GenerateRSFScript()
+    {
+        string finalName = GetWrapperPrefixType() + scriptName;
+
+        GetFirstWordIfSplitByUppercase(scriptName, out string output);
+        string soAssetPath = $"RSF/{output}/{scriptName}";
+
+        bool noValues = valueA == "" && valueB == "" && valueC == "";
+
+        string values = "";
+        if (!noValues)
+            values = ParseValues();
+
+        string scriptContent = WrapperTemplate.rso
+            .Replace("#SCRIPTNAME#", finalName)
+            .Replace("RuntimeScriptableObject<>", $"RuntimeScriptableFunction{values}")
+            .Replace("#FILE_PATH#", soAssetPath);
+
+        return scriptContent;
+    }
+
+    string ParseValues()
+    {
+        string values = "<";
+        values += valueA;
+        values += valueB == "" ? "" : ((valueA != "" ? ", " : "") + valueB);
+        values += valueC == "" ? "" : ((valueA + valueB != "" ? ", " : "") + valueC);
+        values += '>';
+
+        return values;
     }
     #endregion
 
