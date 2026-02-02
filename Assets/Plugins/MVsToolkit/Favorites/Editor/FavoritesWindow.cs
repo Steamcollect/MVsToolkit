@@ -1,22 +1,22 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using Object = UnityEngine.Object;
 
 namespace MVsToolkit.Favorites
 {
     public class FavoritesWindow: EditorWindow
     {
-        
         private FavoritesService m_FavoritesService;
         private Vector2 m_ScrollPos;
-        private int m_SelectedFolderIndex = 0;
+        private int m_SelectedFolderIndex;
 
         [MenuItem("Tools/MVsToolkit/Favorites")]
-        public static void ShowWindow()
+        public static void Open()
         {
-            var wnd = GetWindow<FavoritesWindow>("Favorites");
-            wnd.minSize = new Vector2(300, 200);
-            wnd.Show();
+            GetWindow<FavoritesWindow>("Favorites");
         }
 
         private void OnEnable()
@@ -27,162 +27,148 @@ namespace MVsToolkit.Favorites
         
         private void OnDisable()
         {
-            m_FavoritesService.Storage.Save();
+            m_FavoritesService.Shutdown();
+            m_FavoritesService = null;
         }
-        
+
         private void OnGUI()
         {
-            FavoritesData data = m_FavoritesService.Storage.FavoritesData;
-
-            EditorGUILayout.BeginVertical();
-
-            // Top: folder tabs
-            DrawFolderTabs(data);
-
-            // Main content
-            m_ScrollPos = EditorGUILayout.BeginScrollView(m_ScrollPos);
-            if (data.Folders.Count > 0 && m_SelectedFolderIndex >= 0 && m_SelectedFolderIndex < data.Folders.Count)
+            using (new EditorGUILayout.VerticalScope())
             {
-                DrawFolderSelected(data.Folders[m_SelectedFolderIndex]);
+                DrawFolderTabs();
+
+                using (new EditorGUILayout.ScrollViewScope(m_ScrollPos))
+                {
+                    if (m_FavoritesService.Storage.FavoritesGroups.Count > 0 && m_SelectedFolderIndex >= 0 && m_SelectedFolderIndex < m_FavoritesService.Storage.FavoritesGroups.Count)
+                    {
+                        DrawFolderSelected();
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField("No folders. Create one using the button below.");
+                    }
+                }
+                
+                // DrawBottomBar();
+
+                HandleDragAndDrop();
+                
             }
-            else
-            {
-                EditorGUILayout.LabelField("No folders. Create one using the button below.");
-            }
-            EditorGUILayout.EndScrollView();
-
-            // Bottom bar
-            DrawBottomBar();
-
-            HandleDragAndDrop();
-
-            EditorGUILayout.EndVertical();
         }
 
-        private void DrawFolderTabs(FavoritesData data)
+        private void DrawFolderTabs()
         {
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            for (int i = 0; i < data.Folders.Count; i++)
+            List<FavoritesGroup> favoritesGroups = m_FavoritesService.Storage.FavoritesGroups;
+
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                var folder = data.Folders[i];
-                GUI.backgroundColor = folder.Color;
-                if (GUILayout.Toggle(i == m_SelectedFolderIndex, folder.Name, EditorStyles.toolbarButton))
+                for (int i = 0; i < favoritesGroups.Count; i++)
                 {
-                    m_SelectedFolderIndex = i;
+                    FavoritesGroup folder = favoritesGroups[i];
+                    GUI.backgroundColor = folder.Color;
+                    if (GUILayout.Toggle(i == m_SelectedFolderIndex, folder.Name, EditorStyles.toolbarButton))
+                    {
+                        m_SelectedFolderIndex = i;
+                        m_FavoritesService.LoadFolder(m_FavoritesService.Storage.FavoritesGroups[m_SelectedFolderIndex]);
+                    }
+                    GUI.backgroundColor = Color.white;
                 }
-                GUI.backgroundColor = Color.white;
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("+", EditorStyles.toolbarButton, GUILayout.Width(30)))
+                {
+                    m_FavoritesService.CreateFolder("New Folder");
+                    m_SelectedFolderIndex = m_FavoritesService.Storage.FavoritesGroups.Count - 1;
+                }
             }
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button("+", EditorStyles.toolbarButton, GUILayout.Width(30)))
-            {
-                m_FavoritesService.CreateFolder("New Folder");
-                m_SelectedFolderIndex = m_FavoritesService.Storage.FavoritesData.Folders.Count - 1;
-            }
-            EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawFolderSelected(FavoritesFolder folder)
+        private void DrawFolderSelected()
         {
-            EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.BeginHorizontal();
-            EditorGUI.BeginChangeCheck();
-            var newName = EditorGUILayout.TextField(folder.Name);
-            var newColor = EditorGUILayout.ColorField(folder.Color, GUILayout.Width(50));
-            if (EditorGUI.EndChangeCheck())
+            
+            FavoritesGroup group = m_FavoritesService.Storage.FavoritesGroups[m_SelectedFolderIndex];
+            
+            using (new EditorGUILayout.VerticalScope("box"))
             {
-                folder.Name = newName;
-                folder.Color = newColor;
-                m_FavoritesService.Storage.Save();
-            }
-             // if (GUILayout.Button("Delete Folder", GUILayout.Width(100)))
-             // {
-             //     if (EditorUtility.DisplayDialog("Delete folder?", $"Delete folder '{folder.Name}'?", "Delete", "Cancel"))
-             //     {
-             //         // m_FavoritesService.DeleteFolder(folder);
-             //         m_SelectedFolderIndex = Mathf.Clamp(m_SelectedFolderIndex - 1, 0, Math.Max(0, m_FavoritesService.Storage.UserData.Folders.Count - 1));
-             //         return;
-             //     }
-             // }
-             EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.Space();
-
-
-            foreach (var item in folder.Elements)
-            {
-                EditorGUILayout.BeginHorizontal("box");
-                var preview = m_FavoritesService.Storage.Resolve(item).Preview;
-                GUILayout.Label(preview ? preview : Texture2D.grayTexture, GUILayout.Width(64), GUILayout.Height(64));
-                EditorGUILayout.BeginVertical();
-                EditorGUILayout.LabelField(item.Name);
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    m_FavoritesService.FocusElement(item);
+                    EditorGUI.BeginChangeCheck();
+                    string newName = EditorGUILayout.TextField(group.Name);
+                    Color newColor = EditorGUILayout.ColorField(group.Color, GUILayout.Width(50));
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        group.Name = newName;
+                        group.Color = newColor;
+                        m_FavoritesService.Storage.Save();
+                    }
                 }
-                if (GUILayout.Button("Delete", GUILayout.Width(60)))
+                
+                EditorGUILayout.Space();
+                
+                foreach (IFavoritesElement item in group.Elements.ToList())
                 {
-                    // m_FavoritesService.DeleteItem(folder, item);
-                    return;
-                }
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.EndVertical();
-                EditorGUILayout.EndHorizontal();
-            }
+                    IFavoritesCacheElement itemCache = m_FavoritesService.Storage.Resolve(item);
 
-            EditorGUILayout.EndVertical();
+                    using (new EditorGUILayout.HorizontalScope("box"))
+                    {
+                        Texture2D preview = itemCache.Preview;
+                        GUILayout.Label(preview ? preview : Texture2D.grayTexture, GUILayout.Width(64), GUILayout.Height(64));
+                        using (new EditorGUILayout.VerticalScope())
+                        {
+                            EditorGUILayout.LabelField(itemCache.Name);
+                            using (new EditorGUILayout.HorizontalScope())
+                            {
+                                if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                                {
+                                    m_FavoritesService.FocusElement(item);
+                                }
+                                if (GUILayout.Button("Delete", GUILayout.Width(60)))
+                                {
+                                    m_FavoritesService.DeleteItem(group, item);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+            }
         }
 
         private void DrawBottomBar()
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            if (GUILayout.Button("Save"))
-            {
-                // m_FavoritesService.Save();
-            }
-
-            if (GUILayout.Button("Reset"))
-            {
-                if (EditorUtility.DisplayDialog("Reset favorites?", "This will remove all saved favorites.", "Reset", "Cancel"))
-                {
-                    // m_FavoritesService.Reset();
-                }
-            }
-
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
         }
 
         private void HandleDragAndDrop()
         {
-            var evt = Event.current;
-            var dropArea = GUILayoutUtility.GetLastRect();
+            Event evt = Event.current;
+            Rect dropArea = GUILayoutUtility.GetLastRect();
             switch (evt.type)
             {
                 case EventType.DragUpdated:
                 case EventType.DragPerform:
                     if (!dropArea.Contains(evt.mousePosition))
                         return;
-
+                    
                     DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
                     if (evt.type == EventType.DragPerform)
                     {
                         DragAndDrop.AcceptDrag();
-                        foreach (var obj in DragAndDrop.objectReferences)
+                        foreach (Object obj in DragAndDrop.objectReferences)
                         {
-                            string path = AssetDatabase.GetAssetPath(obj);
-                            string guid = AssetDatabase.AssetPathToGUID(path);
-                            FavoritesAsset resources = new()
+                            if (m_FavoritesService.Storage.FavoritesGroups.Count == 0)
                             {
-                                ItemGuid = new GUID(guid)
-                            };
-                            if (m_FavoritesService.Storage.FavoritesData.Folders.Count == 0)
-                            {
-                                m_FavoritesService.CreateFolder("Default");
+                                m_FavoritesService.CreateFolder(null);
                                 m_SelectedFolderIndex = 0;
+                                m_FavoritesService.AddItem(m_FavoritesService.Storage.FavoritesGroups[m_SelectedFolderIndex],obj);
                             }
-                            var folder = m_FavoritesService.Storage.FavoritesData.Folders[m_SelectedFolderIndex];
-                            m_FavoritesService.AddItem(folder, resources);
+                            else
+                            {
+                                FavoritesGroup group = m_FavoritesService.Storage.FavoritesGroups[m_SelectedFolderIndex];
+                                m_FavoritesService.AddItem(group, obj);
+                            }
+                            
                         }
                     }
                     Event.current.Use();

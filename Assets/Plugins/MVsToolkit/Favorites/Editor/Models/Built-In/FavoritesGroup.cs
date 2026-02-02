@@ -5,7 +5,7 @@ using UnityEngine;
 namespace MVsToolkit.Favorites
 {
     [Serializable]
-    public class FavoritesFolder
+    public class FavoritesGroup
     {
         #region Fields
 

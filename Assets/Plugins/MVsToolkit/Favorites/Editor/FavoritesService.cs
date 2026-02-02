@@ -1,12 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
 using Object = UnityEngine.Object;
-
-#if UNITY_EDITOR
 using UnityEditor;
-#endif
 
 namespace MVsToolkit.Favorites
 {
@@ -21,7 +15,7 @@ namespace MVsToolkit.Favorites
             Storage.Load();
             VerifyData();
         }
-        
+
         public void Shutdown()
         {
             m_Storage.Save();
@@ -29,11 +23,11 @@ namespace MVsToolkit.Favorites
 
         private void VerifyData()
         {
-            foreach (var folder in m_Storage.FavoritesData.Folders)
+            foreach (FavoritesGroup folder in m_Storage.FavoritesGroups)
             {
                 foreach (IFavoritesElement element in folder.Elements.ToArray())
                 {
-                    if (!element.IsValid())
+                    if (element == null || !element.IsValid())
                     {
                         folder.Elements.Remove(element);
                     }
@@ -44,7 +38,7 @@ namespace MVsToolkit.Favorites
 
         public void FocusElement(IFavoritesElement element)
         {
-            Object obj = element.GetObject();
+            Object obj = m_Storage.Resolve(element).Object;
             if (!obj) return;
             //TODO: Test in prefab mode && scene objects
             Selection.activeObject = obj;
@@ -53,39 +47,62 @@ namespace MVsToolkit.Favorites
 
         public void CreateFolder(string name)
         {
-            FavoritesFolder folder = new()
+            if (String.IsNullOrEmpty(name)) name = "Default";
+
+            FavoritesGroup group = new()
             {
                 Name = name,
                 Color = UnityEngine.Random.ColorHSV(0f, 1f, 0.5f, 1f, 0.5f, 1f)
             };
-            m_Storage.FavoritesData.Folders.Add(folder);
+            m_Storage.FavoritesGroups.Add(group);
             m_Storage.Save();
         }
         
-        public void DeleteFolder(FavoritesFolder folder)
+        public void LoadFolder(FavoritesGroup group)
         {
-            throw new NotImplementedException();
-            m_Storage.FavoritesData.Folders.Remove(folder);
-            m_Storage.Save();
+            // Currently no special loading is needed as all data is in memory.
+            // This method is a placeholder for potential future functionality.
+            m_Storage.ClearCache();
+            m_Storage.CacheGroup(group);
         }
         
-        public void LoadFolder(FavoritesFolder folder)
+        public void DeleteFolder(FavoritesGroup group)
         {
-            throw new NotImplementedException();
+            m_Storage.FavoritesGroups.Remove(group);
+            m_Storage.Save();
         }
 
-        public void AddItem(FavoritesFolder folder, FavoritesAsset resources)
+        public void AddItem(FavoritesGroup group, Object obj)
         {
-            throw new NotImplementedException();
-            folder.Elements.Add(resources);
+            
+            if (group == null)
+            {
+                CreateFolder(null);
+                group = m_Storage.FavoritesGroups[^1];
+            }
+            
+            if (m_Storage.ContainElement(group, obj)) return;
+            
+            FactoryFavoritesElement.FavoritesElementContext ctx = new()
+            {
+                ObjectTarget = obj,
+                Guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(obj))
+            };
+
+            IFavoritesElement element = FactoryFavoritesElement.Create(ctx);
+
+            group.Elements.Add(element);
+            
+            m_Storage.CacheGroup(group);
+            
             m_Storage.Save();
         }
-        
-        public void RemoveItem()
-        {
-            throw new NotImplementedException();
-        }
 
+        public void DeleteItem(FavoritesGroup group, IFavoritesElement element)
+        {
+            group.Elements.Remove(element);
+            m_Storage.Save();
+        }
         
     }
 }
