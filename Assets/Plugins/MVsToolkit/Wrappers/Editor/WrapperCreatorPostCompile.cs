@@ -9,26 +9,16 @@ public static class WrapperCreatorPostCompile
 {
     static WrapperCreatorPostCompile()
     {
-        CompilationPipeline.compilationFinished += OnCompilationFinished;
-    }
-
-    static void OnCompilationFinished(object obj)
-    {
         AssemblyReloadEvents.afterAssemblyReload += CreateAssetAfterReload;
     }
 
     static void CreateAssetAfterReload()
     {
-        Debug.Log("Assembly reloaded");
-
         string scriptName = EditorPrefs.GetString("CurrentWrapperNameCreated");
         string assetPath = EditorPrefs.GetString("CurrentWrapperPathCreated");
 
         if (scriptName != null && scriptName != "")
         {
-            Debug.Log(scriptName);
-            Debug.Log(assetPath);
-
             var type = FindType(scriptName);
 
             if (type == null)
@@ -50,6 +40,8 @@ public static class WrapperCreatorPostCompile
             AssetDatabase.Refresh();
 
             EditorPrefs.SetString("CurrentWrapperNameCreated", "");
+
+            Debug.Log($"ScriptableObject \"{scriptName}\" created");
         }
     }
 

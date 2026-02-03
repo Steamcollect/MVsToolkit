@@ -345,7 +345,7 @@ public class WrapperCreator : EditorWindow
     void ScriptFileGeneration(string finalName, string fullScriptPath)
     {
         EditorPrefs.SetString("CurrentWrapperNameCreated", finalName);
-        EditorPrefs.SetString("CurrentWrapperPathCreated", assetPath);
+        EditorPrefs.SetString("CurrentWrapperPathCreated", lastAssetPath);
 
         string content = GenerateWrapperScriptStr();
         string directory = System.IO.Path.GetDirectoryName(fullScriptPath);
