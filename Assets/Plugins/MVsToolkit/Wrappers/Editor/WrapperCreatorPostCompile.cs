@@ -1,63 +1,58 @@
-﻿using UnityEditor;
+﻿using System.Threading.Tasks;
+using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
+using UnityEngine.Analytics;
 
 [InitializeOnLoad]
 public static class WrapperCreatorPostCompile
 {
-    static string pendingScriptName;
-    static string pendingAssetPath;
-
     static WrapperCreatorPostCompile()
     {
         CompilationPipeline.compilationFinished += OnCompilationFinished;
     }
 
-    public static void Register(string scriptName, string assetPath)
-    {
-        pendingScriptName = scriptName;
-        pendingAssetPath = assetPath;
-    }
-
     static void OnCompilationFinished(object obj)
     {
-        if (string.IsNullOrEmpty(pendingScriptName))
-            return;
-
-        // Attendre que Unity recharge les assemblies
-        EditorApplication.delayCall += CreateAssetAfterReload;
+        AssemblyReloadEvents.afterAssemblyReload += CreateAssetAfterReload;
     }
 
     static void CreateAssetAfterReload()
     {
-        string finalName = "RSO_" + pendingScriptName;
+        Debug.Log("Assembly reloaded");
 
-        // Trouver le type dans toutes les assemblies
-        var type = FindType(finalName);
+        string scriptName = EditorPrefs.GetString("CurrentWrapperNameCreated");
+        string assetPath = EditorPrefs.GetString("CurrentWrapperPathCreated");
 
-        if (type == null)
+        if (scriptName != null && scriptName != "")
         {
-            Debug.LogError("Impossible de trouver le type après reload : " + finalName);
-            return;
+            Debug.Log(scriptName);
+            Debug.Log(assetPath);
+
+            var type = FindType(scriptName);
+
+            if (type == null)
+            {
+                Debug.LogError("Impossible de trouver le type après reload : " + scriptName);
+                return;
+            }
+
+            ScriptableObject asset = ScriptableObject.CreateInstance(type);
+
+            string fullPath = "Assets/" + assetPath + scriptName + ".asset";
+
+            string dir = System.IO.Path.GetDirectoryName(fullPath);
+            if (!System.IO.Directory.Exists(dir))
+                System.IO.Directory.CreateDirectory(dir);
+
+            AssetDatabase.CreateAsset(asset, fullPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            EditorPrefs.SetString("CurrentWrapperNameCreated", "");
         }
-
-        ScriptableObject asset = ScriptableObject.CreateInstance(type);
-
-        string fullPath = "Assets/" + pendingAssetPath + finalName + ".asset";
-
-        string dir = System.IO.Path.GetDirectoryName(fullPath);
-        if (!System.IO.Directory.Exists(dir))
-            System.IO.Directory.CreateDirectory(dir);
-
-        AssetDatabase.CreateAsset(asset, fullPath);
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-
-        Debug.Log("Asset créé : " + fullPath);
-
-        pendingScriptName = null;
-        pendingAssetPath = null;
     }
+
     static System.Type FindType(string typeName)
     {
         foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())

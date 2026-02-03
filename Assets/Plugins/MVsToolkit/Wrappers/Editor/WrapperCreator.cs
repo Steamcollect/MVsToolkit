@@ -273,14 +273,14 @@ public class WrapperCreator : EditorWindow
 
         if (GUILayout.Button("Create"))
         {
-            CreateButton();
+            CreatesScript();
         }
 
         GUILayout.Space(margin);
         EditorGUILayout.EndHorizontal();
     }
 
-    void CreateButton()
+    void CreatesScript()
     {
         string finalName = GetWrapperPrefixType() + scriptName;
         string fullPath = "Assets/" + lastScriptPath + finalName + ".cs";
@@ -334,7 +334,7 @@ public class WrapperCreator : EditorWindow
         Event e = Event.current;
         if (e.type == EventType.KeyDown)
         {
-            if (e.keyCode == KeyCode.Return) CreateButton();
+            if (e.keyCode == KeyCode.Return) CreatesScript();
             if (e.keyCode == KeyCode.Escape) Close();
             if (e.keyCode == KeyCode.LeftArrow) wrapperType = wrapperType.Previous();
             if (e.keyCode == KeyCode.RightArrow) wrapperType = wrapperType.Next();
@@ -344,6 +344,9 @@ public class WrapperCreator : EditorWindow
     #region GenerationScript
     void ScriptFileGeneration(string finalName, string fullScriptPath)
     {
+        EditorPrefs.SetString("CurrentWrapperNameCreated", finalName);
+        EditorPrefs.SetString("CurrentWrapperPathCreated", assetPath);
+
         string content = GenerateWrapperScriptStr();
         string directory = System.IO.Path.GetDirectoryName(fullScriptPath);
 
