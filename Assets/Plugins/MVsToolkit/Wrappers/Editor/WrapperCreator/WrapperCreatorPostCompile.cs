@@ -41,7 +41,7 @@ public static class WrapperCreatorPostCompile
 
             EditorPrefs.SetString("CurrentWrapperNameCreated", "");
 
-            Debug.Log($"ScriptableObject \"{scriptName}\" created");
+            Debug.Log(scriptName + " created");
         }
     }
 
